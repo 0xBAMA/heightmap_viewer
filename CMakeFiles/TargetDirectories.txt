@@ -1,5 +1,0 @@
-/home/jb/Documents/Repos/heightmap_viewer/CMakeFiles/rebuild_cache.dir
-/home/jb/Documents/Repos/heightmap_viewer/CMakeFiles/edit_cache.dir
-/home/jb/Documents/Repos/heightmap_viewer/CMakeFiles/exe.dir
-/home/jb/Documents/Repos/heightmap_viewer/CMakeFiles/BigInt.dir
-/home/jb/Documents/Repos/heightmap_viewer/CMakeFiles/imgui.dir
