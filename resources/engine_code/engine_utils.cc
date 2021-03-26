@@ -210,55 +210,66 @@ void engine::create_window() {
   cout << "done." << endl;
 
   ImVec4 *colors = ImGui::GetStyle().Colors;
-
-  colors[ImGuiCol_Text] = ImVec4(0.64f, 0.37f, 0.37f, 1.00f);
-  colors[ImGuiCol_TextDisabled] = ImVec4(0.49f, 0.26f, 0.26f, 1.00f);
-  colors[ImGuiCol_WindowBg] = ImVec4(0.17f, 0.00f, 0.00f, 0.98f);
-  colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-  colors[ImGuiCol_PopupBg] = ImVec4(0.18f, 0.00f, 0.00f, 0.94f);
-  colors[ImGuiCol_Border] = ImVec4(0.35f, 0.00f, 0.03f, 0.50f);
-  colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-  colors[ImGuiCol_FrameBg] = ImVec4(0.14f, 0.04f, 0.00f, 1.00f);
-  colors[ImGuiCol_FrameBgHovered] = ImVec4(0.14f, 0.04f, 0.00f, 1.00f);
-  colors[ImGuiCol_FrameBgActive] = ImVec4(0.14f, 0.04f, 0.00f, 1.00f);
-  colors[ImGuiCol_TitleBg] = ImVec4(0.14f, 0.04f, 0.00f, 1.00f);
-  colors[ImGuiCol_TitleBgActive] = ImVec4(0.14f, 0.04f, 0.00f, 1.00f);
-  colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-  colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-  colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-  colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-  colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-  colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-  colors[ImGuiCol_CheckMark] = ImVec4(0.87f, 0.23f, 0.09f, 1.00f);
-  colors[ImGuiCol_SliderGrab] = ImVec4(0.87f, 0.23f, 0.09f, 1.00f);
-  colors[ImGuiCol_SliderGrabActive] = ImVec4(1.00f, 0.33f, 0.00f, 1.00f);
-  colors[ImGuiCol_Button] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
-  colors[ImGuiCol_ButtonHovered] = ImVec4(0.87f, 0.23f, 0.09f, 1.00f);
-  colors[ImGuiCol_ButtonActive] = ImVec4(1.00f, 0.33f, 0.00f, 1.00f);
-  colors[ImGuiCol_Header] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
-  colors[ImGuiCol_HeaderHovered] = ImVec4(0.87f, 0.23f, 0.09f, 1.00f);
-  colors[ImGuiCol_HeaderActive] = ImVec4(1.00f, 0.33f, 0.00f, 1.00f);
-  colors[ImGuiCol_Separator] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
-  colors[ImGuiCol_SeparatorHovered] = ImVec4(0.87f, 0.23f, 0.09f, 1.00f);
-  colors[ImGuiCol_SeparatorActive] = ImVec4(1.00f, 0.33f, 0.00f, 1.00f);
-  colors[ImGuiCol_ResizeGrip] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
-  colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.87f, 0.23f, 0.09f, 1.00f);
-  colors[ImGuiCol_ResizeGripActive] = ImVec4(1.00f, 0.33f, 0.00f, 1.00f);
-  colors[ImGuiCol_Tab] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
-  colors[ImGuiCol_TabHovered] = ImVec4(0.87f, 0.23f, 0.09f, 1.00f);
-  colors[ImGuiCol_TabActive] = ImVec4(1.00f, 0.33f, 0.00f, 1.00f);
-  colors[ImGuiCol_TabUnfocused] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
-  colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
+  colors[ImGuiCol_Text] = ImVec4(0.67f, 0.50f, 0.16f, 1.00f);
+  colors[ImGuiCol_TextDisabled] = ImVec4(0.33f, 0.27f, 0.16f, 1.00f);
+  colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.05f, 0.00f, 1.00f);
+  colors[ImGuiCol_ChildBg] = ImVec4(0.23f, 0.17f, 0.02f, 0.05f);
+  colors[ImGuiCol_PopupBg] = ImVec4(0.30f, 0.12f, 0.06f, 0.94f);
+  colors[ImGuiCol_Border] = ImVec4(0.25f, 0.18f, 0.09f, 0.33f);
+  colors[ImGuiCol_BorderShadow] = ImVec4(0.33f, 0.15f, 0.02f, 0.17f);
+  colors[ImGuiCol_FrameBg] = ImVec4(0.561f, 0.082f, 0.04f, 0.17f);
+  colors[ImGuiCol_FrameBgHovered] = ImVec4(0.19f, 0.09f, 0.02f, 0.17f);
+  colors[ImGuiCol_FrameBgActive] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_TitleBg] = ImVec4(0.25f, 0.12f, 0.01f, 1.00f);
+  colors[ImGuiCol_TitleBgActive] = ImVec4(0.33f, 0.15f, 0.02f, 1.00f);
+  colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.25f, 0.12f, 0.01f, 1.00f);
+  colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.07f, 0.02f, 1.00f);
+  colors[ImGuiCol_ScrollbarBg] = ImVec4(0.13f, 0.10f, 0.08f, 0.53f);
+  colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.33f, 0.15f, 0.02f, 1.00f);
+  colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_CheckMark] = ImVec4(0.69f, 0.45f, 0.11f, 1.00f);
+  colors[ImGuiCol_SliderGrab] = ImVec4(0.28f, 0.18f, 0.06f, 1.00f);
+  colors[ImGuiCol_SliderGrabActive] = ImVec4(0.36f, 0.22f, 0.06f, 1.00f);
+  colors[ImGuiCol_Button] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_ButtonHovered] = ImVec4(0.33f, 0.15f, 0.02f, 1.00f);
+  colors[ImGuiCol_ButtonActive] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_Header] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_HeaderHovered] = ImVec4(0.33f, 0.15f, 0.02f, 1.00f);
+  colors[ImGuiCol_HeaderActive] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_Separator] = ImVec4(0.28f, 0.18f, 0.06f, 0.37f);
+  colors[ImGuiCol_SeparatorHovered] = ImVec4(0.33f, 0.15f, 0.02f, 0.17f);
+  colors[ImGuiCol_SeparatorActive] = ImVec4(0.42f, 0.18f, 0.06f, 0.17f);
+  colors[ImGuiCol_ResizeGrip] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.33f, 0.15f, 0.02f, 1.00f);
+  colors[ImGuiCol_ResizeGripActive] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_Tab] = ImVec4(0.25f, 0.12f, 0.01f, 0.78f);
+  colors[ImGuiCol_TabHovered] = ImVec4(0.33f, 0.15f, 0.02f, 1.00f);
+  colors[ImGuiCol_TabActive] = ImVec4(0.34f, 0.14f, 0.01f, 1.00f);
+  colors[ImGuiCol_TabUnfocused] = ImVec4(0.33f, 0.15f, 0.02f, 1.00f);
+  colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.42f, 0.18f, 0.06f, 1.00f);
   colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
   colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
   colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
   colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-  colors[ImGuiCol_TextSelectedBg] = ImVec4(0.81f, 0.38f, 0.09f, 0.08f);
-  colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-  colors[ImGuiCol_NavHighlight] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+  colors[ImGuiCol_TextSelectedBg] = ImVec4(0.06f, 0.03f, 0.01f, 0.78f);
+  colors[ImGuiCol_DragDropTarget] = ImVec4(0.64f, 0.42f, 0.09f, 0.90f);
+  colors[ImGuiCol_NavHighlight] = ImVec4(0.64f, 0.42f, 0.09f, 0.90f);
   colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
   colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+ 
+  ImGuiStyle &style = ImGui::GetStyle();
+ 
+  style.TabRounding = 2;
+  style.FrameRounding = 2;
+  style.WindowPadding.x = 0;
+  style.WindowPadding.y = 0;
+  style.FramePadding.x = 1;
+  style.FramePadding.y = 0;
+  style.IndentSpacing = 8;
+  style.WindowRounding = 3;
+  style.ScrollbarSize = 10;
 }
 
 void engine::quit_conf(bool *open) {
@@ -351,8 +362,7 @@ void engine::gl_setup() {
   for (auto it = image_data.begin(); it != image_data.end(); it++) {
     int index = (it - image_data.begin());
     float noise =
-        std::clamp(std::abs(p.noise((index / (WIDTH)) * 0.003,
-                                    (index % (4 * WIDTH)) * 0.003, 0.0) -
+      std::clamp(std::abs(p.noise((index / (WIDTH)) * 0.003,                                   (index % (4 * WIDTH)) * 0.003, 0.0) -
                             0.3 +
                             p.noise((index / (WIDTH)) * 0.006,
                                     (index % (4 * WIDTH)) * 0.006, 0.2) -
@@ -615,15 +625,6 @@ void engine::draw_everything() {
   if (show_demo_window)
     ImGui::ShowDemoWindow(&show_demo_window);
 
-  // do my own windows
-  ImGui::Begin("Controls0", NULL, 0);
-  ImGui::Text("This is some text");
-  ImGui::End();
-
-  ImGui::Begin("Controls1", NULL, 0);
-  ImGui::Text("This is some text");
-  ImGui::End();
-
   ImGui::Begin("Editor", NULL, 0);
 
   static TextEditor editor;
@@ -679,15 +680,19 @@ void engine::draw_everything() {
         event.window.windowID == SDL_GetWindowID(window))
       pquit = true;
 
-    if ((event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE) ||
-        (event.type == SDL_MOUSEBUTTONDOWN &&
-         event.button.button ==
-             SDL_BUTTON_X1)) // x1 is browser back on the mouse
-      quitconfirm = !quitconfirm;
+    if(! io.WantCaptureKeyboard) // imgui doesn't want the keyboard input
+    { // this is used so that keyboard manipulation of widgets doesn't collide with my input handling
 
-    if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE &&
-        SDL_GetModState() & KMOD_SHIFT)
-      pquit = true; // force quit
+      if ((event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE) ||
+          (event.type == SDL_MOUSEBUTTONDOWN &&
+           event.button.button ==
+           SDL_BUTTON_X1)) // x1 is browser back on the mouse
+        quitconfirm = !quitconfirm;
+
+      if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE &&
+          SDL_GetModState() & KMOD_SHIFT)
+        pquit = true; // force quit
+    }
   }
 }
 
