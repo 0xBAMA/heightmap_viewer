@@ -76,7 +76,11 @@ using std::flush;
 #include "../nlohmann_JSON/json.hpp"
 using json = nlohmann::json;
 
-#define WIDTH 640
-#define HEIGHT 480
+// constexpr int WIDTH = 640;
+// constexpr int HEIGHT = 480;
+
+constexpr int WIDTH  = 1920;
+constexpr int HEIGHT = 1080;
+
 
 #endif

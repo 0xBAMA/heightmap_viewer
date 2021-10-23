@@ -733,8 +733,8 @@ static void ImGui_ImplOpenGL3_RenderWindow(ImGuiViewport* viewport, void*)
 {
     if (!(viewport->Flags & ImGuiViewportFlags_NoRendererClear))
     {
-        ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        ImVec4 clearColor = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
     }
     ImGui_ImplOpenGL3_RenderDrawData(viewport->DrawData);

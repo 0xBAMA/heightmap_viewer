@@ -6,50 +6,43 @@
 class engine
 {
 public:
-
 	engine();
 	~engine();
 
 private:
+  int totalScreenWidth  =  WIDTH;
+  int totalScreenHeight = HEIGHT;
 
 	SDL_Window * window;
 	SDL_GLContext GLcontext;
+  ImVec4 clearColor;
 
-	ImVec4 clear_color;
+  // holds the renderer result
+  GLuint renderTexture;
 
+  // holds the heightmap data
+  GLuint heightmapTexture;
+  GLuint colormapTexture;
 
-    GLuint display_texture;
-    GLuint display_shader;
-	GLuint display_vao;
-	GLuint display_vbo;
+  // for the fullscreen triangle
+  GLuint displayShader;
+	GLuint displayVAO;
+	GLuint displayVBO;
 
-	int total_screen_width, total_screen_height;
+  // main loop support
+	void createWindow();
+	void glSetup();
 
-	void create_window();
-	void gl_setup();
-	void draw_everything();
+  // main loop functions
+	void drawEverything();
 
-	void load_OBJ(std::string filename);
-
+  // quitting
 	void quit();
-	void quit_conf(bool *open);
-		
-	bool quitconfirm = false;
-	bool pquit = false;
+	void quitConf(bool *open);
 
-public:
-//placeholder
-// OBJ data (per mesh)	
-	// this may vary in length
-	std::vector<glm::vec4> vertices;
-	std::vector<glm::vec3> normals;
-	std::vector<glm::vec3> texcoords;
-
-	// these should all be the same length, the number of triangles
-	std::vector<glm::ivec3> triangle_indices;
-	std::vector<glm::ivec3> normal_indices;
-	std::vector<glm::ivec3> texcoord_indices;
-		
+  // control flags
+	bool quitConfirmFlag = false;
+	bool programQuitFlag = false;
 };
 
 #endif

@@ -5,15 +5,15 @@
 
 engine::engine()
 {
-    pquit = false;
+    programQuitFlag = false;
 
-    create_window();
+    createWindow();
     gl_debug_enable();
-    gl_setup();
+    glSetup();
 
-    while(!pquit) // main loop
+    while(!programQuitFlag) // main loop
     {
-        draw_everything();
+        drawEverything();
     }
 }
 
