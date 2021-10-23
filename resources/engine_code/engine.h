@@ -21,16 +21,23 @@ private:
   GLuint renderTexture;
 
   // holds the heightmap data
-  GLuint heightmapTexture;
-  GLuint colormapTexture;
+  GLuint heightmapTexture; // from generated heightmap
+  GLuint colormapTexture;  // ground color computed from local slope - maybe do shadows into this, too?
+
+  // compute shader to render
+  GLuint renderShader;
+
+  // compute shader to shade colormap
+  GLuint shadeShader;
 
   // for the fullscreen triangle
   GLuint displayShader;
 	GLuint displayVAO;
 	GLuint displayVBO;
 
-  // main loop support
+  // initialization
 	void createWindow();
+  void ImGUIConfigure();
 	void glSetup();
 
   // main loop functions

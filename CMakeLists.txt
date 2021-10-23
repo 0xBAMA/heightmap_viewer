@@ -35,7 +35,7 @@ add_library(imgui
   resources/ocornut_imgui/imgui_demo.cc
   resources/ocornut_imgui/imgui_draw.cc
   resources/ocornut_imgui/imgui_widgets.cc
-  resources/ocornut_imgui/imgui_tables.cc  
+  resources/ocornut_imgui/imgui_tables.cc
   resources/ocornut_imgui/imgui_gl3w.c
   resources/ocornut_imgui/TextEditor.cpp)
 
@@ -63,6 +63,7 @@ add_executable(exe
   resources/engine_code/gpu_data.cc
   resources/engine_code/engine.cc
   resources/engine_code/engine_utils.cc
+  resources/engine_code/engine_imgui_utils.cc
   resources/perlin/perlin.cc
   resources/lodev_lodePNG/lodepng.cc)
 

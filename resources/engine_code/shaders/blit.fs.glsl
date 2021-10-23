@@ -2,13 +2,19 @@
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
 
 uniform vec2 resolution;
-out vec4 fragment_output;
+out vec4 fragmentOutput;
 
-void main()
-{
-	vec2 lv_pos = (gl_FragCoord.xy / resolution);
+void main() {
+  // map sample to 0..1
+	vec2  sampleLoc = gl_FragCoord.xy / resolution;
 
-	uvec4 s = imageLoad(current, ivec2(lv_pos.x*imageSize(current).x, lv_pos.y*imageSize(current).y));
+  // pull from the render texture -
+  //   doing it this way decouples render texture resolution from screen resolution
+  uvec4 loadedColor = imageLoad( current, ivec2( sampleLoc.xy * imageSize( current ).xy ) );
 
-	fragment_output = vec4(float(s.r)/256.0,float(s.g)/256.0,float(s.b)/256.0,float(s.a)/256.0);
+  // map color to 0..1
+	fragmentOutput = vec4( loadedColor ) / 255.;
+
+  // may want to use alpha for depth fog, as it will blend w/ clear color
+  // fragmentOutput.a = 1.;
 }

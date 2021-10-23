@@ -82,5 +82,11 @@ using json = nlohmann::json;
 constexpr int WIDTH  = 1920;
 constexpr int HEIGHT = 1080;
 
+#define displayVSPath "resources/engine_code/shaders/blit.vs.glsl"
+#define displayFSPath "resources/engine_code/shaders/blit.fs.glsl"
+
+#define renderCSPath "resources/engine_code/shaders/render.cs.glsl"
+#define shadeCSPath "resources/engine_code/shaders/shade.cs.glsl"
+
 
 #endif

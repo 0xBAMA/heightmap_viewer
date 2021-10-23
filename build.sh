@@ -4,4 +4,4 @@ cd build
 make
 cp ./exe ..
 cd ..
-rm -r ./build
+# rm -r ./build

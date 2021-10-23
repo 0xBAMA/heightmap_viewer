@@ -8,8 +8,9 @@ engine::engine()
     programQuitFlag = false;
 
     createWindow();
-    gl_debug_enable();
+    glDebugEnable();
     glSetup();
+    ImGUIConfigure();
 
     while(!programQuitFlag) // main loop
     {
