@@ -15,6 +15,7 @@ void main() {
   //   doing it this way decouples render texture resolution from screen resolution - it is still 1:1, here
 
   // vec4 loadedColor = texture( current, sampleLoc.xy );
+  // uvec4 loadedColor = imageLoad( heightmap, ivec2( sampleLoc.xy * imageSize( heightmap ).xy ) );
   uvec4 loadedColor = imageLoad( current, ivec2( sampleLoc.xy * imageSize( current ).xy ) );
 
   // map color to 0..1

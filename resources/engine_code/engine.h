@@ -29,12 +29,23 @@ private:
   GLuint colormapTexture; // world color
   std::vector<unsigned char> colormap;
 
+  // renderer state
+  glm::vec2 viewPosition = glm::vec2( 512, 512 );
+  int viewerHeight       = 50;
+  float viewAngle        = 0.;
+  float maxDistance      = 300.;
+  int horizonLine        = 120;
+  float heightScalar     = 2.0;
+  float fogScalar        = 1.;
+  float stepIncrement    = 0.005;
+
 
   // keeps track of when the heightmap has changed and needs to be re-sent
   bool CPU_UpdateFlag = true;
 
 
   // compute shaders
+  GLuint clearShader;   // to clear
   GLuint renderShader; // to render
   GLuint shadeShader; // to shade colormap
 
@@ -52,6 +63,7 @@ private:
 	void drawEverything();
   void handleInput();
   void textEditor();
+  void adjustmentWindow();
 
   // quitting
 	void quit();

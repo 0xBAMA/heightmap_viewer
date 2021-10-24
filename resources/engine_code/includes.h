@@ -19,7 +19,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-//#include <filesystem> //c++20 support not quite universal yet
 
 // iostream aliases
 using std::cerr;
@@ -86,6 +85,7 @@ constexpr int HEIGHT = 1080;
 
 #define renderCSPath "resources/engine_code/shaders/render.cs.glsl"
 #define shadeCSPath "resources/engine_code/shaders/shade.cs.glsl"
+#define clearCSPath "resources/engine_code/shaders/clear.cs.glsl"
 
 #define colormapPath "maps/C1W.png"
 #define heightmapPath "maps/D1.png"

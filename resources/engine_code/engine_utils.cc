@@ -143,6 +143,7 @@ void engine::glSetup() {
 
   // compute shader compilation
   cout << "  Compiling Compute Shaders..........................";
+  clearShader  = CShader(  clearCSPath ).Program;
   renderShader = CShader( renderCSPath ).Program;
   shadeShader  = CShader(  shadeCSPath ).Program;
   cout << "done." << endl;
@@ -167,9 +168,22 @@ void engine::drawEverything() {
 
   // compute shader prepares the render texture
   glUseProgram( renderShader );
-  glUniform2i( glGetUniformLocation( renderShader, "resolution" ), screenX, screenY );
+
+  // updating all the uniforms
+  glUniform2i( glGetUniformLocation( renderShader, "resolution" ),   screenX, screenY );
+  glUniform2f( glGetUniformLocation( renderShader, "viewPosition" ), viewPosition.x, viewPosition.y );
+  glUniform1i( glGetUniformLocation( renderShader, "viewerHeight"),  viewerHeight );
+  glUniform1f( glGetUniformLocation( renderShader, "viewAngle"),     viewAngle );
+  glUniform1f( glGetUniformLocation( renderShader, "maxDistance"),   maxDistance );
+  glUniform1i( glGetUniformLocation( renderShader, "horizonLine"),   horizonLine );
+  glUniform1f( glGetUniformLocation( renderShader, "heightScalar"),  heightScalar );
+  glUniform1f( glGetUniformLocation( renderShader, "fogScalar"),     fogScalar );
+  glUniform1f( glGetUniformLocation( renderShader, "stepIncrement"), stepIncrement );
+
+  // dispatch to draw into render texture
   glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
 
+  glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
 
   // present render texture
@@ -190,12 +204,19 @@ void engine::drawEverything() {
   // Draw the editor window
   textEditor();
 
+  // adjustments for the renderer state
+  adjustmentWindow();
+
   // put imgui data into the framebuffer
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 
   // swap the double buffers
   SDL_GL_SwapWindow( window );
+
+  // clearing out the render texture for next frame
+  glUseProgram( clearShader );
+  glDispatchCompute( totalScreenWidth, totalScreenHeight, 1 );
 }
 
 void engine::handleInput(){

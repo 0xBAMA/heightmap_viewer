@@ -21,7 +21,7 @@ uniform int viewerHeight;
 uniform float viewAngle;
 
 // maximum traversal
-uniform int maxDistance;
+uniform float maxDistance;
 
 // horizon line position
 uniform int horizonLine;
@@ -32,32 +32,64 @@ uniform float heightScalar;
 // scalar for fog distance
 uniform float fogScalar;
 
+// increase in step size as you get farther from the camera
+uniform float stepIncrement; // I've seen values of 0.005 and 0.2
+
+
+void drawVerticalLine( const uint x, uint y1, uint y2, const uvec4 col ){
+  uint yMax = imageSize( current ).y;
+  y1 = clamp( y1, 0, yMax );
+  y2 = clamp( y2, 0, yMax );
+  for( uint y = min( y1, y2 ); y <= max( y1, y2 ); y++ ){
+    imageStore( current, ivec2( x, y ), col );
+  }
+}
 
 
 void main() {
-  const uint wPixels   = imageSize( current ).x;
-  const uint hPixels   = imageSize( current ).y;
-  const uint myXIndex  = gl_GlobalInvocationID.x;
+  const uint wPixels    = imageSize( current ).x;
+  const uint hPixels    = imageSize( current ).y;
+  const uint myXIndex   = gl_GlobalInvocationID.x;
+  uint yBuffer          = 0;
 
-  const float sinAng   = sin( viewAngle );
-  const float cosAng   = cos( viewAngle );
 
-  uint yBuffer         = hPixels;
-  const uvec4 border   = uvec4( 84, 38, 5, 255 );
+  // consider the raycast operation for all non-edge pixels in the strip
+  float currentZ = 1.0;
+  float dZ       = 1.0;
 
-  // border handling
-  if( myXIndex == 0 || myXIndex == ( wPixels - 1 )){
-    for( uint currentY = 0; currentY < hPixels; currentY++ )
-      imageStore( current, ivec2( myXIndex, currentY ), border );
-    return; // no part of this vertical strip needs the shader to continue
-  }else{
-    // top and bottom need single pixel
-    imageStore( current, ivec2( myXIndex,           0 ), border );
-    imageStore( current, ivec2( myXIndex, hPixels - 1 ), border );
-  }
+  // angle is constant across this whole shader invocation, so these can be precomputed
+  const float sinAng    = sin( viewAngle );
+  const float cosAng    = cos( viewAngle );
 
-  // now consider the raycast operation for all non-edge pixels in the strip
-  for( uint currentZ = 0; currentZ < maxDistance; currentZ++ ){
+  // ivec2 sloc = ivec2( myXIndex, viewPosition.x );
+  // drawVerticalLine(myXIndex, 0, uint( heightScalar * imageLoad( heightmap, sloc ).r), imageLoad( colormap, sloc ));
 
+  // draw from front to back
+  for( int iterations = 0; ( currentZ < maxDistance ) && ( iterations < 20 ); iterations++ ){
+
+    // the two endpoints of the current slice across z - we have some more work here, as we are not traversing across the z slice
+    const vec2 pLeft  = vec2( -cosAng * currentZ - sinAng * currentZ + viewPosition.x, sinAng * currentZ - cosAng * currentZ + viewPosition.y );
+    const vec2 pRight = vec2( -cosAng * currentZ - sinAng * currentZ + viewPosition.x, sinAng * currentZ - cosAng * currentZ + viewPosition.y );
+
+    // step dx and dy, across z slice
+    const float dx = ( pRight.x - pLeft.x ) / float( wPixels );
+    const float dy = ( pRight.y - pLeft.y ) / float( wPixels );
+
+    // current shader invocation's position, across the z slice
+    const vec2 pSample = pLeft + myXIndex * vec2( dx, dy );
+
+    // compute the height on the screen
+    const uint sampleHeight  = imageLoad( heightmap, ivec2( pSample )).r;
+    const int heightOnScreen = int(( viewerHeight - sampleHeight ) / currentZ * heightScalar + horizonLine );
+
+    // draw a vertical line
+    const uvec4 sampleColor  = imageLoad( heightmap, ivec2( pSample ));
+    drawVerticalLine( myXIndex, heightOnScreen, yBuffer, sampleColor );
+
+    // update buffered minimum encountered Y value
+    yBuffer = max( heightOnScreen, yBuffer );
+
+    currentZ += dZ;             // move further out
+    dZ       += stepIncrement; // step size becomes larger as you get farther away
   }
 }
