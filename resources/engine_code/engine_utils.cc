@@ -97,24 +97,24 @@ void engine::glSetup() {
   // create the image textures
   cout << "  Buffering texture data.............................";
 
-  // first, the render texture
-  glGenTextures(1, &renderTexture);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_RECTANGLE, renderTexture);
-
-  // texture parameters
-  glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  // producing initial image data for the render texture
+  // producing initial image data for the render texture - first, the render texture
   std::vector<unsigned char> imageData;
   imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
   for( auto it = imageData.begin(); it != imageData.end(); it++ ){
     int index = ( it - imageData.begin() );
     *it = ( unsigned char )(( index / ( totalScreenWidth )) % 256 ) ^ ( unsigned char )(( index % ( 4 * totalScreenWidth )) % 256 );
   }
+
+  // generate the render texture
+  glGenTextures( 1, &renderTexture );
+  glActiveTexture( GL_TEXTURE0 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, renderTexture );
+
+  // texture parameters
+  glTexParameterf( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameterf( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
   // send it
   glActiveTexture( GL_TEXTURE0 );
@@ -124,14 +124,27 @@ void engine::glSetup() {
 
 
   // next, the initial heightmap data
-  imageData.clear();
-  imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
+  unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
+  error = lodepng::decode( heightmap, hWidth, hHeight, heightmapPath );
+  if( error ) cout << "error loading heightmap data" << endl;
+
+  // send to GPU
+  glGenTextures( 1, &heightmapTexture );
+  glActiveTexture( GL_TEXTURE1 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, heightmapTexture );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, hWidth, hHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
+  glBindImageTexture( 1, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
 
   // finally, the initial colormap data
-  imageData.clear();
-  imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
+  error = lodepng::decode( colormap, cWidth, cHeight, colormapPath );
+  if( error ) cout << "error loading colormap data" << endl;
 
+  glGenTextures( 1, &colormapTexture );
+  glActiveTexture( GL_TEXTURE2 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, cWidth, cHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
+  glBindImageTexture( 2, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
 
 

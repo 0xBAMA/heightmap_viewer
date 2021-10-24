@@ -16,12 +16,23 @@ private:
 	SDL_GLContext GLcontext;
   ImVec4 clearColor;
 
-  // holds the renderer result
+  // holds the renderer result, before being presented
   GLuint renderTexture;
 
-  // holds the heightmap data - initially load from disk
-  GLuint heightmapTexture;   // from generated heightmap
-  GLuint colormapTexture;  // ground color computed from local slope - maybe do shadows into this, too?
+  // world representation -
+    // - vector of ints on CPU
+    // - texture data on GPU
+
+  GLuint heightmapTexture; // world height
+  std::vector<unsigned char> heightmap;
+
+  GLuint colormapTexture; // world color
+  std::vector<unsigned char> colormap;
+
+
+  // keeps track of when the heightmap has changed and needs to be re-sent
+  bool CPU_UpdateFlag = true;
+
 
   // compute shaders
   GLuint renderShader; // to render

@@ -24,6 +24,11 @@ uniform float viewAngle;
 // maximum traversal
 uniform int maxDistance;
 
+// scalar for fog distance
+uniform float fogScalar;
+
+
+
 
 void main() {
   const uint wPixels   = imageSize( current ).x;
@@ -34,22 +39,22 @@ void main() {
   const float cosAng   = cos( viewAngle );
 
   uint yBuffer         = hPixels;
+  const uvec4 border   = uvec4( 84, 38, 5, 255 );
 
   // border handling
   if( myXIndex == 0 || myXIndex == ( wPixels - 1 )){
-    for( uint currentY = 0; currentY < hPixels; currentY++ ) // handles edges
-      imageStore( current, ivec2( myXIndex, currentY ), uvec4( 84, 38, 5, 255 ));
-    return;
+    for( uint currentY = 0; currentY < hPixels; currentY++ )
+      imageStore( current, ivec2( myXIndex, currentY ), border );
+    return; // no part of this vertical strip needs the shader to continue
   }else{
-    // top and bottom, single pixel
-    imageStore( current, ivec2( myXIndex,           0 ), uvec4( 84, 38, 5, 255 ));
-    imageStore( current, ivec2( myXIndex, hPixels - 1 ), uvec4( 84, 38, 5, 255 ));
+    // top and bottom need single pixel
+    imageStore( current, ivec2( myXIndex,           0 ), border );
+    imageStore( current, ivec2( myXIndex, hPixels - 1 ), border );
   }
 
-  // now consider the raycast operation
+
+  // now consider the raycast operation for all non-edge pixels in the strip
   for( uint currentZ = 0; currentZ < maxDistance; currentZ++ ){
 
   }
-
-  // imageStore( current, ivec2( myXIndex, currentY ), uvec4( 0 ));
 }
