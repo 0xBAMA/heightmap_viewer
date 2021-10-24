@@ -93,7 +93,6 @@ void engine::glSetup() {
   cout << "done." << endl;
 
 
-
   // create the image textures
   cout << "  Buffering texture data.............................";
 
@@ -109,12 +108,6 @@ void engine::glSetup() {
   glGenTextures( 1, &renderTexture );
   glActiveTexture( GL_TEXTURE0 );
   glBindTexture( GL_TEXTURE_RECTANGLE, renderTexture );
-
-  // texture parameters
-  glTexParameterf( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameterf( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
   // send it
   glActiveTexture( GL_TEXTURE0 );
@@ -145,8 +138,6 @@ void engine::glSetup() {
   glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
   glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, cWidth, cHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
   glBindImageTexture( 2, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
-
-
 
   cout << "done." << endl;
 

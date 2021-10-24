@@ -8,7 +8,6 @@ layout( binding = 0, rgba8ui ) uniform uimage2D current;
 layout( binding = 1, rgba8ui ) uniform uimage2D heightmap;
 layout( binding = 2, rgba8ui ) uniform uimage2D colormap;
 
-
 // current screen resolution
 uniform ivec2 resolution;
 
@@ -24,9 +23,14 @@ uniform float viewAngle;
 // maximum traversal
 uniform int maxDistance;
 
+// horizon line position
+uniform int horizonLine;
+
+// scale value for height
+uniform float heightScalar;
+
 // scalar for fog distance
 uniform float fogScalar;
-
 
 
 
@@ -51,7 +55,6 @@ void main() {
     imageStore( current, ivec2( myXIndex,           0 ), border );
     imageStore( current, ivec2( myXIndex, hPixels - 1 ), border );
   }
-
 
   // now consider the raycast operation for all non-edge pixels in the strip
   for( uint currentZ = 0; currentZ < maxDistance; currentZ++ ){
