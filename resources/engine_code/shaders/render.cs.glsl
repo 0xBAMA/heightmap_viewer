@@ -10,7 +10,7 @@ layout( binding = 2, rgba8ui ) uniform uimage2D colormap;
 
 
 // current screen resolution
-uniform vec2 resolution;
+uniform ivec2 resolution;
 
 // starting point for rendering
 uniform vec2 viewPosition;
@@ -26,6 +26,7 @@ uniform int maxDistance;
 
 
 void main() {
+  const uint wPixels   = imageSize( current ).x;
   const uint hPixels   = imageSize( current ).y;
   const uint myXIndex  = gl_GlobalInvocationID.x;
 
@@ -34,11 +35,21 @@ void main() {
 
   uint yBuffer         = hPixels;
 
-  // for( uint currentZ = 0; currentZ < maxDistance; currentZ++ ){
-  //
-  // }
-
-  for( uint currentY = 0; currentY < hPixels; currentY++ ){
-    imageStore( current, ivec2( myXIndex, currentY ), uvec4( currentY % 255, ( currentY * 2 ) % 255, ( currentY * 4 ) % 255, 255 ));
+  // border handling
+  if( myXIndex == 0 || myXIndex == ( wPixels - 1 )){
+    for( uint currentY = 0; currentY < hPixels; currentY++ ) // handles edges
+      imageStore( current, ivec2( myXIndex, currentY ), uvec4( 84, 38, 5, 255 ));
+    return;
+  }else{
+    // top and bottom, single pixel
+    imageStore( current, ivec2( myXIndex,           0 ), uvec4( 84, 38, 5, 255 ));
+    imageStore( current, ivec2( myXIndex, hPixels - 1 ), uvec4( 84, 38, 5, 255 ));
   }
+
+  // now consider the raycast operation
+  for( uint currentZ = 0; currentZ < maxDistance; currentZ++ ){
+
+  }
+
+  // imageStore( current, ivec2( myXIndex, currentY ), uvec4( 0 ));
 }

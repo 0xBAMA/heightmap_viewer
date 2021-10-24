@@ -9,8 +9,8 @@ public:
 	~engine();
 
 private:
-  int totalScreenWidth  =  WIDTH;
-  int totalScreenHeight = HEIGHT;
+  int totalScreenWidth  =  WIDTH - 100;
+  int totalScreenHeight = HEIGHT - 100;
 
 	SDL_Window * window;
 	SDL_GLContext GLcontext;

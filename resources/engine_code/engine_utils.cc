@@ -22,12 +22,11 @@ void engine::createWindow() {
   cout << "  Creating window....................................";
 
   auto windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS;
-  window = SDL_CreateWindow( windowTitle, 50, 50, WIDTH-100, HEIGHT-100, windowFlags);
+  window = SDL_CreateWindow( windowTitle, 50, 50, totalScreenWidth, totalScreenHeight, windowFlags);
 
   cout << "done." << endl;
 
   cout << "  Setting up OpenGL context..........................";
-
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -50,7 +49,6 @@ void engine::createWindow() {
   glClear( GL_COLOR_BUFFER_BIT );
   SDL_GL_SwapWindow( window );
   SDL_ShowWindow( window );
-
   cout << "done." << endl;
 }
 
@@ -112,26 +110,27 @@ void engine::glSetup() {
 
   // producing initial image data for the render texture
   std::vector<unsigned char> imageData;
-  imageData.resize( WIDTH * HEIGHT * 4 );
+  imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
   for( auto it = imageData.begin(); it != imageData.end(); it++ ){
     int index = ( it - imageData.begin() );
-    *it = ( unsigned char )(( index / ( WIDTH )) % 256 ) ^ ( unsigned char )(( index % ( 4 * WIDTH )) % 256 );
+    *it = ( unsigned char )(( index / ( totalScreenWidth )) % 256 ) ^ ( unsigned char )(( index % ( 4 * totalScreenWidth )) % 256 );
   }
 
   // send it
   glActiveTexture( GL_TEXTURE0 );
   glBindTexture( GL_TEXTURE_RECTANGLE, renderTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
   glBindImageTexture( 0, renderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
 
   // next, the initial heightmap data
   imageData.clear();
-  imageData.resize( WIDTH * HEIGHT * 4 );
+  imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
 
 
   // finally, the initial colormap data
   imageData.clear();
+  imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
 
 
 
@@ -152,14 +151,20 @@ void engine::drawEverything() {
 
   // get the screen dimensions to pass in as uniforms
   ImGuiIO &io = ImGui::GetIO();
-  const float screenX = io.DisplaySize.x;
-  const float screenY = io.DisplaySize.y;
+  const int screenX = io.DisplaySize.x;
+  const int screenY = io.DisplaySize.y;
 
 
-  // compute shaders prepare the render texture
+
+  // compute shader to compute the colormap
+  //  ...
+
+
+
+  // compute shader prepares the render texture
   glUseProgram( renderShader );
-  glDispatchCompute( WIDTH / 64, 1, 1 );
-
+  glUniform2i( glGetUniformLocation( renderShader, "resolution" ), screenX, screenY );
+  glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
 
 
 
@@ -167,7 +172,7 @@ void engine::drawEverything() {
   glUseProgram( displayShader );
   glBindVertexArray( displayVAO );
   glBindBuffer( GL_ARRAY_BUFFER, displayVBO );
-  glUniform2f( glGetUniformLocation( displayShader, "resolution" ), screenX, screenY );
+  glUniform2i( glGetUniformLocation( displayShader, "resolution" ), screenX, screenY );
   glDrawArrays( GL_TRIANGLES, 0, 3 );
 
   // Start the Dear ImGui frame
