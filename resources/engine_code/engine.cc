@@ -3,22 +3,20 @@
 
 // This contains the very high level expression of what's going on
 
-engine::engine()
-{
-    programQuitFlag = false;
+engine::engine(){
+  programQuitFlag = false;
 
-    createWindow();
-    glDebugEnable();
-    glSetup();
-    ImGUIConfigure();
+  createWindow();
+  glDebugEnable();
+  glSetup();
+  ImGUIConfigure();
 
-    while(!programQuitFlag) // main loop
-    {
-        drawEverything();
-    }
+  while(!programQuitFlag){
+    drawEverything();
+    handleInput();
+  }
 }
 
-engine::~engine()
-{
-    quit();
+engine::~engine(){
+  quit();
 }

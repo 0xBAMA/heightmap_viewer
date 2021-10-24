@@ -3,8 +3,7 @@
 
 #include "includes.h"
 
-class engine
-{
+class engine{
 public:
 	engine();
 	~engine();
@@ -20,15 +19,13 @@ private:
   // holds the renderer result
   GLuint renderTexture;
 
-  // holds the heightmap data
-  GLuint heightmapTexture; // from generated heightmap
+  // holds the heightmap data - initially load from disk
+  GLuint heightmapTexture;   // from generated heightmap
   GLuint colormapTexture;  // ground color computed from local slope - maybe do shadows into this, too?
 
-  // compute shader to render
-  GLuint renderShader;
-
-  // compute shader to shade colormap
-  GLuint shadeShader;
+  // compute shaders
+  GLuint renderShader; // to render
+  GLuint shadeShader; // to shade colormap
 
   // for the fullscreen triangle
   GLuint displayShader;
@@ -42,6 +39,8 @@ private:
 
   // main loop functions
 	void drawEverything();
+  void handleInput();
+  void textEditor();
 
   // quitting
 	void quit();

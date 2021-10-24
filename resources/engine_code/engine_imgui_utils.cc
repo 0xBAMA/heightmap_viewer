@@ -112,3 +112,37 @@ void engine::ImGUIConfigure(){
 
   cout << "done." << endl;
 }
+
+
+
+// for the text editor
+void engine::textEditor(){
+  ImGui::Begin("Editor", NULL, 0);
+
+  static TextEditor editor;
+  static auto lang = TextEditor::LanguageDefinition::GLSL();
+  editor.SetLanguageDefinition(lang);
+
+  auto cpos = editor.GetCursorPosition();
+  editor.SetPalette(TextEditor::GetDarkPalette());
+
+  static const char *fileToEdit = "resources/engine_code/shaders/blit.vs.glsl";
+  std::ifstream t(fileToEdit);
+  static bool loaded = false;
+  if (!loaded) {
+    editor.SetLanguageDefinition(lang);
+    if (t.good()) {
+      editor.SetText(std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>()));
+      loaded = true;
+    }
+  }
+
+  ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1,
+              cpos.mColumn + 1, editor.GetTotalLines(),
+              editor.IsOverwrite() ? "Ovr" : "Ins",
+              editor.CanUndo() ? "*" : " ",
+              editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
+
+  editor.Render("TextEditor");
+  ImGui::End();
+}

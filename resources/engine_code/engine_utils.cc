@@ -21,9 +21,8 @@ void engine::createWindow() {
 
   cout << "  Creating window....................................";
 
-  window = SDL_CreateWindow( "OpenGL Window", 50, 50, WIDTH-100, HEIGHT-100, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS );
-  // window = SDL_CreateWindow( "OpenGL Window", 0, 0, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
-  SDL_ShowWindow(window);
+  auto windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS;
+  window = SDL_CreateWindow( windowTitle, 50, 50, WIDTH-100, HEIGHT-100, windowFlags);
 
   cout << "done." << endl;
 
@@ -50,6 +49,7 @@ void engine::createWindow() {
   glClearColor( 0.618, 0.618, 0.618, 1.0 );
   glClear( GL_COLOR_BUFFER_BIT );
   SDL_GL_SwapWindow( window );
+  SDL_ShowWindow( window );
 
   cout << "done." << endl;
 }
@@ -62,8 +62,11 @@ void engine::glSetup() {
   printf("    OpenGL Support: %s\n\n", version);
 
   // create the shader for the triangles to cover the screen
+  cout << "  Compiling Display Shaders..........................";
   displayShader = Shader( displayVSPath, displayFSPath ).Program;
+  cout << "done." << endl;
 
+  cout << "  Setting up VAO, VBO for display geometry...........";
   // based on this, one triangle is significantly faster than two
   // https://michaldrobot.com/2014/04/01/gcn-execution-patterns-in-full-screen-passes/
   std::vector<glm::vec2> points;
@@ -71,11 +74,9 @@ void engine::glSetup() {
   points.push_back( glm::vec2(  3, -1 ) ); // B
   points.push_back( glm::vec2( -1,  3 ) ); // C
 
-  // vao, vbo
-  cout << "  Setting up VAO, VBO for display geometry...........";
+  // generate and bind
   glGenVertexArrays( 1, &displayVAO );
   glBindVertexArray( displayVAO );
-
   glGenBuffers( 1, &displayVBO );
   glBindBuffer( GL_ARRAY_BUFFER, displayVBO );
   cout << "done." << endl;
@@ -93,22 +94,12 @@ void engine::glSetup() {
   glVertexAttribPointer(points_attrib, 2, GL_FLOAT, GL_FALSE, 0, (0));
   cout << "done." << endl;
 
-  // replace this with real image data
-  std::vector<unsigned char> image_data;
-  image_data.resize(WIDTH * HEIGHT * 4);
 
-  // fill with random values
-  std::default_random_engine gen;
-  std::uniform_int_distribution<unsigned char> dist(150, 255);
-  std::uniform_int_distribution<unsigned char> dist2(12, 45);
-  PerlinNoise p;
-
-  for (auto it = image_data.begin(); it != image_data.end(); it++) {
-    int index = (it - image_data.begin());
-    *it = (unsigned char)((index / (WIDTH)) % 256) ^ (unsigned char)((index % (4 * WIDTH)) % 256);
-  }
 
   // create the image textures
+  cout << "  Buffering texture data.............................";
+
+  // first, the render texture
   glGenTextures(1, &renderTexture);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_RECTANGLE, renderTexture);
@@ -119,85 +110,89 @@ void engine::glSetup() {
   glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  // buffer the image data to the GPU
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_RECTANGLE, renderTexture);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &image_data[0]);
-  glBindImageTexture(0, renderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+  // producing initial image data for the render texture
+  std::vector<unsigned char> imageData;
+  imageData.resize( WIDTH * HEIGHT * 4 );
+  for( auto it = imageData.begin(); it != imageData.end(); it++ ){
+    int index = ( it - imageData.begin() );
+    *it = ( unsigned char )(( index / ( WIDTH )) % 256 ) ^ ( unsigned char )(( index % ( 4 * WIDTH )) % 256 );
+  }
 
-  // compute shaders, etc...
+  // send it
+  glActiveTexture( GL_TEXTURE0 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, renderTexture );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, WIDTH, HEIGHT, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
+  glBindImageTexture( 0, renderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+
+
+  // next, the initial heightmap data
+  imageData.clear();
+  imageData.resize( WIDTH * HEIGHT * 4 );
+
+
+  // finally, the initial colormap data
+  imageData.clear();
+
+
+
+
+  cout << "done." << endl;
+
+  // compute shader compilation
+  cout << "  Compiling Compute Shaders..........................";
   renderShader = CShader( renderCSPath ).Program;
   shadeShader  = CShader(  shadeCSPath ).Program;
+  cout << "done." << endl;
 }
 
 void engine::drawEverything() {
 
+  // clear the framebuffer
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the background
-
-  // draw the stuff on the GPU
-
-  // present render texture
-  glUseProgram(displayShader);
-  glBindVertexArray(displayVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, displayVBO);
-
-  // get the screen dimensions and pass in as uniforms
+  // get the screen dimensions to pass in as uniforms
   ImGuiIO &io = ImGui::GetIO();
   const float screenX = io.DisplaySize.x;
   const float screenY = io.DisplaySize.y;
-  glUniform2f(glGetUniformLocation(displayShader, "resolution"), screenX, screenY);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
+  // compute shaders prepare the render texture
+  glUseProgram( renderShader );
+  glDispatchCompute( WIDTH / 64, 1, 1 );
+
+
+
+
+  // present render texture
+  glUseProgram( displayShader );
+  glBindVertexArray( displayVAO );
+  glBindBuffer( GL_ARRAY_BUFFER, displayVBO );
+  glUniform2f( glGetUniformLocation( displayShader, "resolution" ), screenX, screenY );
+  glDrawArrays( GL_TRIANGLES, 0, 3 );
 
   // Start the Dear ImGui frame
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame(window);
   ImGui::NewFrame();
 
-  // ImGui::Begin("Editor", NULL, 0);
-  //
-  // static TextEditor editor;
-  // static auto lang = TextEditor::LanguageDefinition::GLSL();
-  // editor.SetLanguageDefinition(lang);
-  //
-  // auto cpos = editor.GetCursorPosition();
-  // editor.SetPalette(TextEditor::GetDarkPalette());
-  //
-  // static const char *fileToEdit = "resources/engine_code/shaders/blit.vs.glsl";
-  // std::ifstream t(fileToEdit);
-  // static bool loaded = false;
-  // if (!loaded) {
-  //   editor.SetLanguageDefinition(lang);
-  //   if (t.good()) {
-  //     editor.SetText(std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>()));
-  //     loaded = true;
-  //   }
-  // }
-  //
-  // ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1,
-  //             cpos.mColumn + 1, editor.GetTotalLines(),
-  //             editor.IsOverwrite() ? "Ovr" : "Ins",
-  //             editor.CanUndo() ? "*" : " ",
-  //             editor.GetLanguageDefinition().mName.c_str(), fileToEdit);
-  //
-  // editor.Render("TextEditor");
-  // ImGui::End();
-
   // show quit confirm window
   quitConf(&quitConfirmFlag);
 
-  // get it ready to put on the screen
-  ImGui::Render();
+  // Draw the editor window
+  textEditor();
 
   // put imgui data into the framebuffer
+  ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 
   // swap the double buffers
   SDL_GL_SwapWindow( window );
+}
 
-  // event handling
+void engine::handleInput(){
   SDL_Event event;
+  ImGuiIO &io = ImGui::GetIO();
+
   while( SDL_PollEvent( &event ) ){
     ImGui_ImplSDL2_ProcessEvent( &event );
 
@@ -209,7 +204,6 @@ void engine::drawEverything() {
 
     if(! io.WantCaptureKeyboard ) // imgui doesn't want the keyboard input
     { // this is used so that keyboard manipulation of widgets doesn't collide with my input handling
-
       if( ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE ) ||
           ( event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_X1 ) )
         quitConfirmFlag = !quitConfirmFlag;
@@ -229,8 +223,8 @@ void engine::quit() {
   ImGui::DestroyContext();
 
   // destroy window
-  SDL_GL_DeleteContext(GLcontext);
-  SDL_DestroyWindow(window);
+  SDL_GL_DeleteContext( GLcontext );
+  SDL_DestroyWindow( window );
   SDL_Quit();
 
   cout << "goodbye." << endl;

@@ -1,5 +1,7 @@
 #version 430 core
 layout( binding = 0, rgba8ui ) uniform uimage2D current;
+layout( binding = 1, rgba8ui ) uniform uimage2D heightmap;
+layout( binding = 2, rgba8ui ) uniform uimage2D colormap;
 
 uniform vec2 resolution;
 out vec4 fragmentOutput;
