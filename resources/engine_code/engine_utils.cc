@@ -179,6 +179,7 @@ void engine::drawEverything() {
   glUniform1f( glGetUniformLocation( renderShader, "heightScalar"),  heightScalar );
   glUniform1f( glGetUniformLocation( renderShader, "fogScalar"),     fogScalar );
   glUniform1f( glGetUniformLocation( renderShader, "stepIncrement"), stepIncrement );
+  glUniform1f( glGetUniformLocation( renderShader, "FoVScalar"),     FoVScalar );
 
   // dispatch to draw into render texture
   glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
@@ -223,6 +224,18 @@ void engine::handleInput(){
   SDL_Event event;
   ImGuiIO &io = ImGui::GetIO();
 
+  // handle specific keys
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_RightArrow ))) viewAngle += SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_LeftArrow )))  viewAngle -= SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
+
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))    positionAdjust(SDL_GetModState() & KMOD_SHIFT ?  1. :  0.2);
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))  positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -1. : -0.2);
+
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))     viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))   viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
+
+
+
   while( SDL_PollEvent( &event ) ){
     ImGui_ImplSDL2_ProcessEvent( &event );
 
@@ -234,6 +247,9 @@ void engine::handleInput(){
 
     if(! io.WantCaptureKeyboard ) // imgui doesn't want the keyboard input
     { // this is used so that keyboard manipulation of widgets doesn't collide with my input handling
+
+
+
       if( ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE ) ||
           ( event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_X1 ) )
         quitConfirmFlag = !quitConfirmFlag;
@@ -242,7 +258,28 @@ void engine::handleInput(){
         programQuitFlag = true; // shift+escape for force quit, skipping confirmation
     }
   }
+
+
+
+
+
 }
+
+
+int engine::heightmapReference(glm::ivec2 p){
+  p.x = std::clamp(p.x, 0, 1023);
+  p.y = std::clamp(p.y, 0, 1023);
+  return int( heightmap[ ( p.x + 1024 * p.y ) * 4 ] );
+}
+
+void engine::positionAdjust(float amt){
+  glm::mat2 rotate = glm::mat2(cos( viewAngle ), sin( viewAngle ), -sin( viewAngle ), cos( viewAngle ));
+  glm::vec2 direction = rotate * glm::vec2( 1., 0. );
+  viewPosition += amt * direction;
+  viewerHeight = std::max(viewerHeight * heightScalar, heightmapReference(glm::ivec2(int(viewPosition.x), int(viewPosition.y))) * heightScalar);
+  viewerHeight /= heightScalar;
+}
+
 
 void engine::quit() {
   cout << "  Shutting down...................................";

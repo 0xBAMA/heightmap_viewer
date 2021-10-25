@@ -153,14 +153,15 @@ void engine::adjustmentWindow(){
 
   ImGui::Text(" Adjustment of Render parameters");
   ImGui::Text("");
-  ImGui::SliderInt("Height", &viewerHeight, 0, 255, "%d");
+  ImGui::SliderInt("Height", &viewerHeight, 0, 500, "%d");
   ImGui::SliderFloat2("Position", (float*)&viewPosition, 0, 1024, "%.3f");
   ImGui::SliderFloat("Angle", &viewAngle, -3.14159265, 3.14159265, "%.3f");
   ImGui::SliderFloat("Max Distance", &maxDistance, 10, 500, "%.3f");
-  ImGui::SliderInt("Horizon", &horizonLine, 0, 240, "%d");
-  ImGui::SliderFloat("Height Scale", &heightScalar, 0, 5., "%.3f");
-  ImGui::SliderFloat("Fog Scale", &fogScalar, 0., 5., "%.3f");
+  ImGui::SliderInt("Horizon", &horizonLine, 0, 500, "%d");
+  ImGui::SliderFloat("Height Scale", &heightScalar, 0, 500., "%.3f");
+  ImGui::SliderFloat("Fog Scale", &fogScalar, 0., 50., "%.3f");
   ImGui::SliderFloat("Step Increment", &stepIncrement, 0., 0.5, "%.3f");
+  ImGui::SliderFloat("FoV", &FoVScalar, 0.01, 15.0, "%.3f");
   ImGui::Text("");
 
   ImGui::End();

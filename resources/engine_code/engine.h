@@ -32,12 +32,13 @@ private:
   // renderer state
   glm::vec2 viewPosition = glm::vec2( 512, 512 );
   int viewerHeight       = 50;
-  float viewAngle        = 0.;
+  float viewAngle        = 0.5;
   float maxDistance      = 300.;
   int horizonLine        = 120;
-  float heightScalar     = 2.0;
-  float fogScalar        = 1.;
+  float heightScalar     = 1.0;
+  float fogScalar        = 22.0;
   float stepIncrement    = 0.005;
+  float FoVScalar        = 3.14159265 / 4.;
 
 
   // keeps track of when the heightmap has changed and needs to be re-sent
@@ -64,6 +65,8 @@ private:
   void handleInput();
   void textEditor();
   void adjustmentWindow();
+  void positionAdjust(float amt);
+  int heightmapReference(glm::ivec2 p);
 
   // quitting
 	void quit();
