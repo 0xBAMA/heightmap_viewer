@@ -33,10 +33,11 @@ private:
   glm::vec2 viewPosition = glm::vec2( 512, 512 );
   int viewerHeight       = 50;
   float viewAngle        = 0.5;
-  float maxDistance      = 300.;
-  int horizonLine        = 120;
-  float heightScalar     = 1.0;
-  float fogScalar        = 22.0;
+  float maxDistance      = 1000.;
+  int horizonLine        = 800;
+  float heightScalar     = 800.0;
+  float offsetScalar     = 10.;
+  float fogScalar        = 0.5;
   float stepIncrement    = 0.005;
   float FoVScalar        = 3.14159265 / 4.;
 

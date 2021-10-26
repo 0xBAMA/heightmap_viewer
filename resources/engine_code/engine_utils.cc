@@ -45,7 +45,8 @@ void engine::createWindow() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // set graphics API clear color and clear window
-  glClearColor( 0.618, 0.618, 0.618, 1.0 );
+  clearColor = ImVec4( 0.618, 0.618, 0.618, 1.0 );
+  glClearColor( clearColor.x, clearColor.y, clearColor.z, 1.0 );
   glClear( GL_COLOR_BUFFER_BIT );
   SDL_GL_SwapWindow( window );
   SDL_ShowWindow( window );
@@ -152,6 +153,7 @@ void engine::glSetup() {
 void engine::drawEverything() {
 
   // clear the framebuffer
+  glClearColor( clearColor.x, clearColor.y, clearColor.z, 1.0 );
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // get the screen dimensions to pass in as uniforms
@@ -166,6 +168,14 @@ void engine::drawEverything() {
 
 
 
+
+  // timer query
+  GLuint64 startTime, stopTime;
+  GLuint queryID[2];
+  glGenQueries( 2, queryID );
+  glQueryCounter( queryID[0], GL_TIMESTAMP );
+
+
   // compute shader prepares the render texture
   glUseProgram( renderShader );
 
@@ -177,12 +187,23 @@ void engine::drawEverything() {
   glUniform1f( glGetUniformLocation( renderShader, "maxDistance"),   maxDistance );
   glUniform1i( glGetUniformLocation( renderShader, "horizonLine"),   horizonLine );
   glUniform1f( glGetUniformLocation( renderShader, "heightScalar"),  heightScalar );
+  glUniform1f( glGetUniformLocation( renderShader, "offsetScalar"),  offsetScalar );
   glUniform1f( glGetUniformLocation( renderShader, "fogScalar"),     fogScalar );
   glUniform1f( glGetUniformLocation( renderShader, "stepIncrement"), stepIncrement );
   glUniform1f( glGetUniformLocation( renderShader, "FoVScalar"),     FoVScalar );
 
   // dispatch to draw into render texture
   glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
+  glQueryCounter( queryID[1], GL_TIMESTAMP );
+
+  GLint timeAvailable = 0;
+  while( !timeAvailable )
+    glGetQueryObjectiv( queryID[1], GL_QUERY_RESULT_AVAILABLE, &timeAvailable );
+
+  glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
+  glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
+
+  cout << "rendered in " << (stopTime - startTime) / 1000000. << " ms" << endl;
 
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
@@ -228,8 +249,8 @@ void engine::handleInput(){
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_RightArrow ))) viewAngle += SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_LeftArrow )))  viewAngle -= SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
 
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))    positionAdjust(SDL_GetModState() & KMOD_SHIFT ?  1. :  0.2);
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))  positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -1. : -0.2);
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))    positionAdjust(SDL_GetModState() & KMOD_SHIFT ?  5. :  1);
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))  positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -5. : -1);
 
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))     viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))   viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
@@ -258,11 +279,6 @@ void engine::handleInput(){
         programQuitFlag = true; // shift+escape for force quit, skipping confirmation
     }
   }
-
-
-
-
-
 }
 
 
