@@ -87,12 +87,7 @@ constexpr int HEIGHT = 1080;
 #define shadeCSPath "resources/engine_code/shaders/shade.cs.glsl"
 #define clearCSPath "resources/engine_code/shaders/clear.cs.glsl"
 
-// #define colormapPath "maps/C1W.png"
-// #define heightmapPath "maps/D1.png"
-
-#define colormapPath "maps/C15.png"
-#define heightmapPath "maps/D15.png"
-
-
+#define colormapPath "maps/C26W.png"
+#define heightmapPath "maps/D26.png"
 
 #endif
