@@ -116,29 +116,10 @@ void engine::glSetup() {
   glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
   glBindImageTexture( 0, renderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
-
-  // next, the initial heightmap data
-  unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
-  error = lodepng::decode( heightmap, hWidth, hHeight, initialHeightmapPath );
-  if( error ) cout << "error loading heightmap data" << endl;
-
-  // send to GPU
-  glGenTextures( 1, &heightmapTexture );
-  glActiveTexture( GL_TEXTURE1 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, heightmapTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, hWidth, hHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
-  glBindImageTexture( 1, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
-
-
-  // finally, the initial colormap data
-  error = lodepng::decode( colormap, cWidth, cHeight, initialColormapPath );
-  if( error ) cout << "error loading colormap data" << endl;
-
-  glGenTextures( 1, &colormapTexture );
-  glActiveTexture( GL_TEXTURE2 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, cWidth, cHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
-  glBindImageTexture( 2, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+  std::random_device rd;  //Will be used to obtain a seed for the random number engine
+  std::mt19937 gen( rd() ); //Standard mersenne_twister_engine seeded with rd()
+  std::uniform_int_distribution< int > distrib( 1, 30 );
+  loadMap( distrib( gen ) );
 
   cout << "done." << endl;
 
@@ -229,10 +210,10 @@ void engine::drawEverything() {
   // adjustments for the renderer state
   adjustmentWindow();
 
-  // show the demo window
-  static bool show_demo_window = true;
-  if (show_demo_window)
-    ImGui::ShowDemoWindow(&show_demo_window);
+  // // show the demo window
+  // static bool show_demo_window = true;
+  // if (show_demo_window)
+  //   ImGui::ShowDemoWindow(&show_demo_window);
 
   // put imgui data into the framebuffer
   ImGui::Render();
@@ -257,9 +238,13 @@ void engine::handleInput(){
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))    positionAdjust(SDL_GetModState() & KMOD_SHIFT ?  5. :  1);
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))  positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -5. : -1);
 
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))     viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))   viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))
+    viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1, positionAdjust( 0 );
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))
+    viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1, positionAdjust( 0 );
 
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Home )))     horizonLine += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Delete )))   horizonLine -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
 
 
   while( SDL_PollEvent( &event ) ){
@@ -304,6 +289,13 @@ void engine::positionAdjust( float amt ){
 void engine::loadMap( int index ){
   heightmap.clear();
   colormap.clear();
+
+  bool firstTime = true;
+  if( firstTime ){
+    glGenTextures( 1, &heightmapTexture );
+    glGenTextures( 1, &colormapTexture );
+    firstTime = false;
+  }
 
   unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
 
