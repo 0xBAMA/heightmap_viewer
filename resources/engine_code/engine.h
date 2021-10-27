@@ -15,6 +15,7 @@ private:
 	SDL_Window * window;
 	SDL_GLContext GLcontext;
   ImVec4 clearColor;
+  float prevFrameTimeMs = 0;
 
   // holds the renderer result, before being presented
   GLuint renderTexture;
@@ -25,6 +26,7 @@ private:
 
   GLuint heightmapTexture; // world height
   std::vector<unsigned char> heightmap;
+  void loadMap( int index );
 
   GLuint colormapTexture; // world color
   std::vector<unsigned char> colormap;

@@ -119,7 +119,7 @@ void engine::glSetup() {
 
   // next, the initial heightmap data
   unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
-  error = lodepng::decode( heightmap, hWidth, hHeight, heightmapPath );
+  error = lodepng::decode( heightmap, hWidth, hHeight, initialHeightmapPath );
   if( error ) cout << "error loading heightmap data" << endl;
 
   // send to GPU
@@ -131,7 +131,7 @@ void engine::glSetup() {
 
 
   // finally, the initial colormap data
-  error = lodepng::decode( colormap, cWidth, cHeight, colormapPath );
+  error = lodepng::decode( colormap, cWidth, cHeight, initialColormapPath );
   if( error ) cout << "error loading colormap data" << endl;
 
   glGenTextures( 1, &colormapTexture );
@@ -203,7 +203,7 @@ void engine::drawEverything() {
   glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
   glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
 
-  cout << "rendered in " << (stopTime - startTime) / 1000000. << " ms" << endl;
+  prevFrameTimeMs = (stopTime - startTime) / 1000000.;
 
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
@@ -228,6 +228,11 @@ void engine::drawEverything() {
 
   // adjustments for the renderer state
   adjustmentWindow();
+
+  // show the demo window
+  static bool show_demo_window = true;
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
 
   // put imgui data into the framebuffer
   ImGui::Render();
@@ -282,18 +287,45 @@ void engine::handleInput(){
 }
 
 
-int engine::heightmapReference(glm::ivec2 p){
+int engine::heightmapReference( glm::ivec2 p ){
   p.x = std::clamp(p.x, 0, 1023);
   p.y = std::clamp(p.y, 0, 1023);
   return int( heightmap[ ( p.x + 1024 * p.y ) * 4 ] );
 }
 
-void engine::positionAdjust(float amt){
+void engine::positionAdjust( float amt ){
   glm::mat2 rotate = glm::mat2(cos( viewAngle ), sin( viewAngle ), -sin( viewAngle ), cos( viewAngle ));
   glm::vec2 direction = rotate * glm::vec2( 1., 0. );
   viewPosition += amt * direction;
   viewerHeight = std::max(viewerHeight * heightScalar, heightmapReference(glm::ivec2(int(viewPosition.x), int(viewPosition.y))) * heightScalar);
   viewerHeight /= heightScalar;
+}
+
+void engine::loadMap( int index ){
+  heightmap.clear();
+  colormap.clear();
+
+  unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
+
+  std::string heightmapPath = std::string("maps/map" + std::to_string(index) + "Height.png");
+  std::string colormapPath  = std::string("maps/map" + std::to_string(index) + "Color.png");
+
+  error = lodepng::decode( heightmap, hWidth, hHeight, heightmapPath.c_str() );
+  if( error ) cout << "error loading heightmap data from " << heightmapPath << endl;
+
+  error = lodepng::decode( colormap, cWidth, cHeight, colormapPath.c_str() );
+  if( error ) cout << "error loading colormap data from " << colormapPath << endl;
+
+  // send to GPU
+  glActiveTexture( GL_TEXTURE1 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, heightmapTexture );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, hWidth, hHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
+  glBindImageTexture( 1, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+
+  glActiveTexture( GL_TEXTURE2 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, cWidth, cHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
+  glBindImageTexture( 2, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 }
 
 

@@ -153,6 +153,24 @@ void engine::adjustmentWindow(){
 
   ImGui::Text( " Adjustment of Render parameters");
   ImGui::Text( "" );
+  const char* items[] = {
+    "Map  1", "Map  2", "Map  3", "Map  4", "Map  5",
+    "Map  6", "Map  7", "Map  8", "Map  9", "Map 10",
+    "Map 11", "Map 12", "Map 13", "Map 14", "Map 15",
+    "Map 16", "Map 17", "Map 18", "Map 19", "Map 20",
+    "Map 21", "Map 22", "Map 23", "Map 24", "Map 25",
+    "Map 26", "Map 27", "Map 28", "Map 29", "Map 30", };
+
+  static int item_current  = 0;
+  static int item_previous = 0;
+  ImGui::Combo("combo", &item_current, items, IM_ARRAYSIZE(items));
+
+  if( item_current != item_previous ){
+    item_previous = item_current;
+    loadMap( item_current + 1 );
+  }
+
+  ImGui::Text( "" );
   ImGui::SliderInt( "Height", &viewerHeight, 0, 500, "%d" );
   ImGui::SliderFloat2( "Position", (float*)&viewPosition, 0, 1024, "%.3f" );
   ImGui::SliderFloat( "Angle", &viewAngle, -3.14159265, 3.14159265, "%.3f" );
@@ -166,6 +184,8 @@ void engine::adjustmentWindow(){
   ImGui::SliderFloat( "Fog Scale", &fogScalar, 0., 0.5, "%.3f" );
   ImGui::ColorEdit3( "Fog Color", ( float * )&clearColor, 0 );
   ImGui::Text( "" );
+  ImGui::Text( "" );
+  ImGui::Text( std::string( "  Previous Frame: " + std::to_string( prevFrameTimeMs ) + " ms" ).c_str() );
 
   ImGui::End();
 }
