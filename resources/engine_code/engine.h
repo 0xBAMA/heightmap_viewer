@@ -17,8 +17,9 @@ private:
   ImVec4 clearColor;
   float prevFrameTimeMs = 0;
 
-  // holds the renderer result, before being presented
-  GLuint renderTexture;
+  // holds the renderer results, before being presented
+  GLuint mainRenderTexture; // main view
+  GLuint miniRenderTexture; // minimap
 
   // world representation -
     // - vector of ints on CPU
@@ -50,9 +51,10 @@ private:
 
 
   // compute shaders
-  GLuint clearShader;   // to clear
-  GLuint renderShader; // to render
-  GLuint shadeShader; // to shade colormap
+  GLuint clearShader;      // to clear
+  GLuint shadeShader;     // to shade colormap
+  GLuint renderShader;   // to render world
+  GLuint minimapShader; // to render minimap
 
   // for the fullscreen triangle
   GLuint displayShader;

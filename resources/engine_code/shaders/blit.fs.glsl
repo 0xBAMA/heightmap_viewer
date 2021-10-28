@@ -1,27 +1,26 @@
 #version 430 core
-// layout( binding = 0 ) uniform sampler2D current;
-layout( binding = 0, rgba8ui ) uniform uimage2D current;
-layout( binding = 1, rgba8ui ) uniform uimage2D heightmap;
-layout( binding = 2, rgba8ui ) uniform uimage2D colormap;
+
+layout( binding = 0, rgba8ui ) uniform uimage2D renderOutput;
+layout( binding = 1, rgba8ui ) uniform uimage2D minimapOutput;
 
 uniform ivec2 resolution;
+uniform int modeSelector;
 out vec4 fragmentOutput;
 
 void main() {
   // map sample to 0..1
-	vec2  sampleLoc = gl_FragCoord.xy / vec2(resolution);
+	vec2 sampleLoc = gl_FragCoord.xy / vec2(resolution);
 
-  // pull from the render texture -
-  //   doing it this way decouples render texture resolution from screen resolution - it is still 1:1, here
+  // load uint values from the appropriate rendertexture for the pass - 0 for render output, 1 for minimap
+  uvec4 loadedColor;
 
-  // vec4 loadedColor = texture( current, sampleLoc.xy );
-  // uvec4 loadedColor = imageLoad( heightmap, ivec2( sampleLoc.xy * imageSize( heightmap ).xy ) );
-  uvec4 loadedColor = imageLoad( current, ivec2( sampleLoc.xy * imageSize( current ).xy ) );
+
+  if( modeSelector == 0 )
+    loadedColor = imageLoad( renderOutput, ivec2( sampleLoc.xy * imageSize( renderOutput ) ) );
+  else if( modeSelector == 1 )
+    loadedColor = imageLoad( minimapOutput, ivec2( sampleLoc.xy * imageSize( minimapOutput ) ) );
+
 
   // map color to 0..1
-	// fragmentOutput = vec4( loadedColor );
   fragmentOutput = vec4( loadedColor ) / 255.;
-
-  // may want to use alpha for depth fog, as it will blend w/ clear color
-  // fragmentOutput.a = 1.;
 }

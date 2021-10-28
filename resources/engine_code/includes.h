@@ -78,16 +78,14 @@ using json = nlohmann::json;
 constexpr int WIDTH  = 1920;
 constexpr int HEIGHT = 1080;
 
-#define windowTitle "Heightmap Viewer"
+#define windowTitle   "Heightmap Viewer"
 
 #define displayVSPath "resources/engine_code/shaders/blit.vs.glsl"
 #define displayFSPath "resources/engine_code/shaders/blit.fs.glsl"
 
-#define renderCSPath "resources/engine_code/shaders/render.cs.glsl"
-#define shadeCSPath "resources/engine_code/shaders/shade.cs.glsl"
-#define clearCSPath "resources/engine_code/shaders/clear.cs.glsl"
-
-#define initialColormapPath "maps/map20Color.png"
-#define initialHeightmapPath "maps/map20Height.png"
+#define renderCSPath  "resources/engine_code/shaders/render.cs.glsl"
+#define minimapCSPath "resources/engine_code/shaders/minimap.cs.glsl"
+#define shadeCSPath   "resources/engine_code/shaders/shade.cs.glsl"
+#define clearCSPath   "resources/engine_code/shaders/clear.cs.glsl"
 
 #endif

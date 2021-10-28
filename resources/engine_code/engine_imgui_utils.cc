@@ -164,7 +164,7 @@ void engine::adjustmentWindow(){
   ImGui::SliderFloat( "Step Increment", &stepIncrement, 0., 0.5, "%.3f" );
   ImGui::SliderFloat( "FoV", &FoVScalar, 0.001, 15.0, "%.3f" );
   ImGui::Text( "" );
-  ImGui::SliderFloat( "Fog Scale", &fogScalar, 0., 0.5, "%.3f" );
+  ImGui::SliderFloat( "Fog Scale", &fogScalar, 0., 1.5, "%.3f" );
   ImGui::ColorEdit3( "Fog Color", ( float * )&clearColor, 0 );
   ImGui::Text( "" );
 
@@ -174,15 +174,15 @@ void engine::adjustmentWindow(){
     "Map 11", "Map 12", "Map 13", "Map 14", "Map 15",
     "Map 16", "Map 17", "Map 18", "Map 19", "Map 20",
     "Map 21", "Map 22", "Map 23", "Map 24", "Map 25",
-    "Map 26", "Map 27", "Map 28", "Map 29", "Map 30", };
+    "Map 26", "Map 27", "Map 28", "Map 29", "Map 30"};
 
-  static int item_current  = 0;
-  static int item_previous = 0;
-  ImGui::Combo("Map Picker", &item_current, items, IM_ARRAYSIZE(items));
+  static int mapPickerItemCurrent  = 0;
+  static int mapPickerItemPrevious = 0;
+  ImGui::Combo("Map Picker", &mapPickerItemCurrent, items, IM_ARRAYSIZE(items));
 
-  if( item_current != item_previous ){
-    item_previous = item_current;
-    loadMap( item_current + 1 );
+  if( mapPickerItemCurrent != mapPickerItemPrevious ){
+    mapPickerItemPrevious = mapPickerItemCurrent;
+    loadMap( mapPickerItemCurrent + 1 );
   }
   ImGui::Unindent();
   ImGui::Text( std::string( " Frame Time: " + std::to_string( prevFrameTimeMs ) + " ms ( " + std::to_string( 1. / ( prevFrameTimeMs / 1000. ) ) + " fps )" ).c_str() );

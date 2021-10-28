@@ -2,47 +2,47 @@
 // This contains the lower level code
 
 void engine::createWindow() {
-  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+  if ( SDL_Init( SDL_INIT_EVERYTHING ) != 0 ) {
     printf("Error: %s\n", SDL_GetError());
   }
 
-  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-  SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-  SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-  SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-  SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+  SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER,       1 );
+  SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
+  SDL_GL_SetAttribute( SDL_GL_RED_SIZE,           8 );
+  SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE,         8 );
+  SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE,          8 );
+  SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE,         8 );
 
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-  SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+  SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE,        24 );
+  SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE,       8 );
 
-  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
+  SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
+  SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 8 );
 
   cout << "  Creating window....................................";
 
   auto windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS;
-  window = SDL_CreateWindow( windowTitle, 50, 50, totalScreenWidth, totalScreenHeight, windowFlags);
+  window = SDL_CreateWindow( windowTitle, 50, 50, totalScreenWidth, totalScreenHeight, windowFlags );
 
   cout << "done." << endl;
 
   cout << "  Setting up OpenGL context..........................";
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-  GLcontext = SDL_GL_CreateContext(window);
+  SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, 0 );
+  SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
+  GLcontext = SDL_GL_CreateContext( window );
 
-  SDL_GL_MakeCurrent(window, GLcontext);
-  SDL_GL_SetSwapInterval(1); // Enable vsync
+  SDL_GL_MakeCurrent( window, GLcontext );
+  SDL_GL_SetSwapInterval( 1 ); // Enable vsync
 
-  if ( gl3wInit() != 0 ) fprintf(stderr, "Failed to initialize OpenGL loader!\n");
+  if ( gl3wInit() != 0 ) fprintf( stderr, "Failed to initialize OpenGL loader!\n" );
 
   // graphics API config
-  glEnable(GL_DEPTH_TEST);
-  glPointSize(3.0);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable( GL_DEPTH_TEST );
+  glPointSize( 3.0 );
+  glEnable( GL_BLEND );
+  glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
   // set graphics API clear color and clear window
   clearColor = ImVec4( 0.618, 0.618, 0.618, 1.0 );
@@ -55,10 +55,10 @@ void engine::createWindow() {
 
 void engine::glSetup() {
   // some info on your current platform
-  const GLubyte *renderer = glGetString(GL_RENDERER); // get renderer string
-  const GLubyte *version = glGetString(GL_VERSION);   // version as a string
-  printf("    Render Device: %s\n", renderer);
-  printf("    OpenGL Support: %s\n\n", version);
+  const GLubyte *renderer = glGetString( GL_RENDERER ); // get renderer string
+  const GLubyte *version = glGetString( GL_VERSION );   // version as a string
+  printf("    Render Device: %s\n", renderer );
+  printf("    OpenGL Support: %s\n\n", version );
 
   // create the shader for the triangles to cover the screen
   cout << "  Compiling Display Shaders..........................";
@@ -82,15 +82,15 @@ void engine::glSetup() {
 
   // buffer the data
   cout << "  Buffering vertex data..............................";
-  glBufferData( GL_ARRAY_BUFFER, sizeof(glm::vec2) * points.size(), NULL, GL_STATIC_DRAW);
-  glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof(glm::vec2) * points.size(), &points[0]);
+  glBufferData( GL_ARRAY_BUFFER, sizeof( glm::vec2 ) * points.size(), NULL, GL_STATIC_DRAW );
+  glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( glm::vec2 ) * points.size(), &points[0] );
   cout << "done." << endl;
 
   // set up attributes
   cout << "  Setting up attributes in display shader............";
-  GLuint points_attrib = glGetAttribLocation(displayShader, "vertexPosition");
-  glEnableVertexAttribArray(points_attrib);
-  glVertexAttribPointer(points_attrib, 2, GL_FLOAT, GL_FALSE, 0, (0));
+  GLuint points_attrib = glGetAttribLocation( displayShader, "vertexPosition" );
+  glEnableVertexAttribArray( points_attrib );
+  glVertexAttribPointer( points_attrib, 2, GL_FLOAT, GL_FALSE, 0, ( 0 ) );
   cout << "done." << endl;
 
 
@@ -98,24 +98,31 @@ void engine::glSetup() {
   cout << "  Buffering texture data.............................";
 
   // producing initial image data for the render texture - first, the render texture
-  std::vector<unsigned char> imageData;
+  std::vector< unsigned char > imageData( totalScreenWidth * totalScreenHeight * 4, 0 );
+
+  // generate the main render texture
+  glGenTextures( 1, &mainRenderTexture );
+  glActiveTexture( GL_TEXTURE0 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, mainRenderTexture );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
+  glBindImageTexture( 0, mainRenderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+
+  imageData.clear();
   imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
   for( auto it = imageData.begin(); it != imageData.end(); it++ ){
     int index = ( it - imageData.begin() );
     *it = ( unsigned char )(( index / ( totalScreenWidth )) % 256 ) ^ ( unsigned char )(( index % ( 4 * totalScreenWidth )) % 256 );
   }
 
-  // generate the render texture
-  glGenTextures( 1, &renderTexture );
-  glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, renderTexture );
-
-  // send it
-  glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, renderTexture );
+  // generate the minimap render texture
+  glGenTextures( 1, &miniRenderTexture );
+  glActiveTexture( GL_TEXTURE1 );
+  glBindTexture( GL_TEXTURE_RECTANGLE, miniRenderTexture );
   glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
-  glBindImageTexture( 0, renderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+  glBindImageTexture( 1, miniRenderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
+
+  // pick a random heightmap to display initially
   std::random_device rd;  //Will be used to obtain a seed for the random number engine
   std::mt19937 gen( rd() ); //Standard mersenne_twister_engine seeded with rd()
   std::uniform_int_distribution< int > distrib( 1, 30 );
@@ -125,9 +132,10 @@ void engine::glSetup() {
 
   // compute shader compilation
   cout << "  Compiling Compute Shaders..........................";
-  clearShader  = CShader(  clearCSPath ).Program;
-  renderShader = CShader( renderCSPath ).Program;
-  shadeShader  = CShader(  shadeCSPath ).Program;
+  clearShader   = CShader(   clearCSPath ).Program;
+  renderShader  = CShader(  renderCSPath ).Program;
+  minimapShader = CShader( minimapCSPath ).Program;
+  shadeShader   = CShader(   shadeCSPath ).Program;
   cout << "done." << endl;
 }
 
@@ -135,7 +143,7 @@ void engine::drawEverything() {
 
   // clear the framebuffer
   glClearColor( clearColor.x, clearColor.y, clearColor.z, 1.0 );
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
   // get the screen dimensions to pass in as uniforms
   ImGuiIO &io = ImGui::GetIO();
@@ -144,7 +152,14 @@ void engine::drawEverything() {
 
 
 
+
   // compute shader to compute the colormap
+  //  ...
+
+
+
+
+  // compute shader to compute the minimap into the corresponding rendertexture
   //  ...
 
 
@@ -157,21 +172,21 @@ void engine::drawEverything() {
   glQueryCounter( queryID[0], GL_TIMESTAMP );
 
 
-  // compute shader prepares the render texture
+  // compute shader to compute the regular display into the corresponding rendertexture
   glUseProgram( renderShader );
 
   // updating all the uniforms
-  glUniform2i( glGetUniformLocation( renderShader, "resolution" ),   screenX, screenY );
-  glUniform2f( glGetUniformLocation( renderShader, "viewPosition" ), viewPosition.x, viewPosition.y );
-  glUniform1i( glGetUniformLocation( renderShader, "viewerHeight"),  viewerHeight );
-  glUniform1f( glGetUniformLocation( renderShader, "viewAngle"),     viewAngle );
-  glUniform1f( glGetUniformLocation( renderShader, "maxDistance"),   maxDistance );
-  glUniform1i( glGetUniformLocation( renderShader, "horizonLine"),   horizonLine );
-  glUniform1f( glGetUniformLocation( renderShader, "heightScalar"),  heightScalar );
-  glUniform1f( glGetUniformLocation( renderShader, "offsetScalar"),  offsetScalar );
-  glUniform1f( glGetUniformLocation( renderShader, "fogScalar"),     fogScalar );
-  glUniform1f( glGetUniformLocation( renderShader, "stepIncrement"), stepIncrement );
-  glUniform1f( glGetUniformLocation( renderShader, "FoVScalar"),     FoVScalar );
+  glUniform2i( glGetUniformLocation( renderShader, "resolution" ),    screenX, screenY );
+  glUniform2f( glGetUniformLocation( renderShader, "viewPosition" ),  viewPosition.x, viewPosition.y );
+  glUniform1i( glGetUniformLocation( renderShader, "viewerHeight" ),  viewerHeight );
+  glUniform1f( glGetUniformLocation( renderShader, "viewAngle" ),     viewAngle );
+  glUniform1f( glGetUniformLocation( renderShader, "maxDistance" ),   maxDistance );
+  glUniform1i( glGetUniformLocation( renderShader, "horizonLine" ),   horizonLine );
+  glUniform1f( glGetUniformLocation( renderShader, "heightScalar" ),  heightScalar );
+  glUniform1f( glGetUniformLocation( renderShader, "offsetScalar" ),  offsetScalar );
+  glUniform1f( glGetUniformLocation( renderShader, "fogScalar" ),     fogScalar );
+  glUniform1f( glGetUniformLocation( renderShader, "stepIncrement" ), stepIncrement );
+  glUniform1f( glGetUniformLocation( renderShader, "FoVScalar" ),     FoVScalar );
 
   // dispatch to draw into render texture
   glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
@@ -183,26 +198,30 @@ void engine::drawEverything() {
 
   glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
   glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
+  prevFrameTimeMs = ( stopTime - startTime ) / 1000000.;
 
-  prevFrameTimeMs = (stopTime - startTime) / 1000000.;
-
+  // make sure all shader invocations have finished before displaying the rendertexture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
-
 
   // present render texture
   glUseProgram( displayShader );
   glBindVertexArray( displayVAO );
   glBindBuffer( GL_ARRAY_BUFFER, displayVBO );
+  glUniform1i( glGetUniformLocation( displayShader, "modeSelector" ), 0 );
+  glUniform2i( glGetUniformLocation( displayShader, "resolution" ), screenX, screenY );
+  glDrawArrays( GL_TRIANGLES, 0, 3 );
+
+  glUniform1i( glGetUniformLocation( displayShader, "modeSelector" ), 1 );
   glUniform2i( glGetUniformLocation( displayShader, "resolution" ), screenX, screenY );
   glDrawArrays( GL_TRIANGLES, 0, 3 );
 
   // Start the Dear ImGui frame
   ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplSDL2_NewFrame(window);
+  ImGui_ImplSDL2_NewFrame( window );
   ImGui::NewFrame();
 
   // show quit confirm window
-  quitConf(&quitConfirmFlag);
+  quitConf( &quitConfirmFlag );
 
   // Draw the editor window
   textEditor();
@@ -232,19 +251,25 @@ void engine::handleInput(){
   ImGuiIO &io = ImGui::GetIO();
 
   // handle specific keys
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_RightArrow ))) viewAngle += SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_LeftArrow )))  viewAngle -= SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_RightArrow )))
+    viewAngle += SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_LeftArrow )))
+    viewAngle -= SDL_GetModState() & KMOD_SHIFT ? 0.05 : 0.005;
 
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))    positionAdjust(SDL_GetModState() & KMOD_SHIFT ?  5. :  1);
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))  positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -5. : -1);
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))
+    positionAdjust(SDL_GetModState() & KMOD_SHIFT ?  5. :  1);
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))
+    positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -5. : -1);
 
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))
     viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1, positionAdjust( 0 );
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))
     viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1, positionAdjust( 0 );
 
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Home )))     horizonLine += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
-  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Delete )))   horizonLine -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Home )))
+    horizonLine += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
+  if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Delete )))
+    horizonLine -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
 
 
   while( SDL_PollEvent( &event ) ){
@@ -259,14 +284,13 @@ void engine::handleInput(){
     if(! io.WantCaptureKeyboard ) // imgui doesn't want the keyboard input
     { // this is used so that keyboard manipulation of widgets doesn't collide with my input handling
 
-
-
       if( ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE ) ||
           ( event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_X1 ) )
         quitConfirmFlag = !quitConfirmFlag;
 
       if( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE && SDL_GetModState() & KMOD_SHIFT )
         programQuitFlag = true; // shift+escape for force quit, skipping confirmation
+
     }
   }
 }
@@ -279,10 +303,11 @@ int engine::heightmapReference( glm::ivec2 p ){
 }
 
 void engine::positionAdjust( float amt ){
-  glm::mat2 rotate = glm::mat2(cos( viewAngle ), sin( viewAngle ), -sin( viewAngle ), cos( viewAngle ));
+  glm::mat2 rotate = glm::mat2( cos( viewAngle ), sin( viewAngle ), -sin( viewAngle ), cos( viewAngle ) );
   glm::vec2 direction = rotate * glm::vec2( 1., 0. );
   viewPosition += amt * direction;
-  viewerHeight = std::max(viewerHeight * heightScalar, heightmapReference(glm::ivec2(int(viewPosition.x), int(viewPosition.y))) * heightScalar);
+  int heightref = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y ))) + 15;
+  viewerHeight = std::max( viewerHeight * heightScalar, heightref * heightScalar );
   viewerHeight /= heightScalar;
 }
 
@@ -291,7 +316,7 @@ void engine::loadMap( int index ){
   colormap.clear();
 
   bool firstTime = true;
-  if( firstTime ){
+  if( firstTime ){ // need to generate textures
     glGenTextures( 1, &heightmapTexture );
     glGenTextures( 1, &colormapTexture );
     firstTime = false;
@@ -299,8 +324,8 @@ void engine::loadMap( int index ){
 
   unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
 
-  std::string heightmapPath = std::string("maps/map" + std::to_string(index) + "Height.png");
-  std::string colormapPath  = std::string("maps/map" + std::to_string(index) + "Color.png");
+  std::string heightmapPath = std::string( "maps/map" + std::to_string( index ) + "Height.png" );
+  std::string colormapPath  = std::string( "maps/map" + std::to_string( index ) + "Color.png" );
 
   error = lodepng::decode( heightmap, hWidth, hHeight, heightmapPath.c_str() );
   if( error ) cout << "error loading heightmap data from " << heightmapPath << endl;
@@ -309,15 +334,15 @@ void engine::loadMap( int index ){
   if( error ) cout << "error loading colormap data from " << colormapPath << endl;
 
   // send to GPU
-  glActiveTexture( GL_TEXTURE1 );
+  glActiveTexture( GL_TEXTURE2 );
   glBindTexture( GL_TEXTURE_RECTANGLE, heightmapTexture );
   glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, hWidth, hHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
-  glBindImageTexture( 1, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+  glBindImageTexture( 2, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
-  glActiveTexture( GL_TEXTURE2 );
+  glActiveTexture( GL_TEXTURE3 );
   glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
   glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, cWidth, cHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
-  glBindImageTexture( 2, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
+  glBindImageTexture( 3, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 }
 
 
