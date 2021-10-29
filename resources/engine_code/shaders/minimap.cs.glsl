@@ -59,47 +59,83 @@ void drawVerticalLine( const uint x, const float yBottom, const float yTop, cons
 
   const int yMin = clamp( int( yBottom ), 0, imageSize( renderTexture ).y );
   const int yMax = clamp( int(  yTop  ), 0, imageSize( renderTexture ).y );
-
   if( yMin > yMax ) return;
 
   for( int y = yMin; y < yMax; y++ ){
-    imageStore( renderTexture, ivec2( x, y ), col );
+    imageStore( minimapTexture, ivec2( x, y ), col );
   }
 }
 
+bool insideMask(ivec2 queryLocation){
+  return distance( vec2(queryLocation), viewPosition ) < 100.;
+  // return true;
+}
+
+uint heightmapReference(ivec2 location){
+  if( insideMask( location ) ){
+    if( distance( location, viewPosition) < 1.618){
+      return imageLoad( heightmap, location ).r + 32;
+    }else{
+      return imageLoad( heightmap, location ).r;
+    }
+  }else{
+    return 0;
+  }
+}
+
+uvec4 colormapReference(ivec2 location){
+  if( insideMask( location ) ){
+    if( distance( location, viewPosition) < 1.618){
+      return uvec4( 255, 0, 0, 255 );
+    }else{
+      return imageLoad( colormap, location );
+    }
+  }else{
+    return uvec4( 0 );
+  }
+}
 
 mat2 rotate2D( float r ){
   return mat2( cos( r ), sin( r ), -sin( r ), cos( r ));
 }
 
 void main() {
-  // const float wPixels    = imageSize( renderTexture ).x;
-  // const float hPixels    = imageSize( renderTexture ).y;
-  // const int myXIndex     = int(gl_GlobalInvocationID.x);
-  // float yBuffer          = 0;
-  //
-  // // FoV considerations
-  // //   mapping [0..wPixels] to [-1..1]
-  // float FoVAdjust        = -1. + float( myXIndex ) * ( 2. ) / float( wPixels );
-  //
-  // const mat2 rotation    = rotate2D( viewAngle + FoVAdjust * FoVScalar );
-  // const vec2 direction   = rotation * vec2( 1, 0 );
-  //
-  // // need a side-to-side adjust to give some spread - CPU side adjustment scalar needs to be added
-  // vec3 sideVector        = cross( vec3( direction.x, 0., direction.y ), vec3( 0., 1., 0. ) );
+  const float wPixels    = imageSize( renderTexture ).x;
+  const float hPixels    = imageSize( renderTexture ).y;
+  const int myXIndex     = int(gl_GlobalInvocationID.x);
+  // float yBuffer          = hPixels - resolution.y;
+  float yBuffer          = 0;
+
+  // FoV considerations
+  //   mapping [0..wPixels] to [-1..1]
+  float FoVAdjust        = -1. + float( myXIndex ) * ( 2. ) / float( wPixels );
+
+  const mat2 rotation    = rotate2D( viewAngle + FoVAdjust * FoVScalar );
+  const vec2 direction   = rotation * vec2( 1, 0 );
+  vec2 startCenter = viewPosition - 200 * direction;
+
+  const vec2 forwards = rotate2D( viewAngle ) * vec2( 1, 0 );
+  // const vec2 fixedDirection = direction * ( dot( direction, forwards ) / dot( forwards, forwards ) );
+  const vec2 fixedDirection = direction * ( dot( forwards, forwards ) / dot( direction, forwards ) );
+
+  // if( myXIndex > resolution.x ) return;
+
+  // need a side-to-side adjust to give some spread - CPU side adjustment scalar needs to be added
+  vec3 sideVector        = cross( vec3( forwards.x, 0., forwards.y ), vec3( 0., 1., 0. ) );
   // vec2 viewPositionLocal = viewPosition + sideVector.xz * FoVAdjust * offsetScalar;
-  //
-  // for( float dSample = 1.0, dz = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz, dz += stepIncrement ){
-  //   const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * direction );
-  //   const float heightSample    = imageLoad( heightmap, samplePosition ).r;
-  //   const float heightOnScreen  = (( heightSample - viewerHeight ) * ( 1. / dSample ) * heightScalar + horizonLine);
-  //
-  //   if( heightOnScreen > yBuffer ){
-  //     const uvec4 colorSample  = imageLoad( colormap, samplePosition );
-  //     drawVerticalLine( myXIndex, yBuffer, heightOnScreen, uvec4( colorSample.xyz, uint( max( 0, 255 - dSample * fogScalar ) ) ) );
-  //     yBuffer = uint( heightOnScreen );
-  //   }
-  // }
+  vec2 viewPositionLocal = startCenter + sideVector.xz * FoVAdjust * offsetScalar;
 
+  for( float dSample = 1.0, dz = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz, dz += stepIncrement ){
+    const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * fixedDirection );
+    const float heightSample    = heightmapReference(samplePosition);
+    const float heightOnScreen  = (( heightSample - viewerHeight ) * ( 1. / dSample ) * heightScalar + horizonLine);
 
+    if( heightOnScreen > yBuffer ){
+      const uvec4 colorSample  = colormapReference( samplePosition );
+      float distanceToColumn = sqrt( pow( dSample, 2 ) + pow( viewerHeight - heightSample, 2) );
+      uint depthTerm = uint( max( 0, 255 - distanceToColumn * fogScalar ) );
+      drawVerticalLine( myXIndex, yBuffer, heightOnScreen, uvec4( colorSample.xyz, depthTerm ) );
+      yBuffer = uint( heightOnScreen );
+    }
+  }
 }

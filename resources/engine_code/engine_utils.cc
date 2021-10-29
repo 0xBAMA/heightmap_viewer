@@ -160,7 +160,24 @@ void engine::drawEverything() {
 
 
   // compute shader to compute the minimap into the corresponding rendertexture
-  //  ...
+  glUseProgram( minimapShader );
+
+  // updating all the uniforms
+  glUniform2i( glGetUniformLocation( minimapShader, "resolution" ),    screenX/4, screenY/3 );
+  glUniform2f( glGetUniformLocation( minimapShader, "viewPosition" ),  viewPosition.x, viewPosition.y );
+  glUniform1i( glGetUniformLocation( minimapShader, "viewerHeight" ),  viewerHeight );
+  glUniform1f( glGetUniformLocation( minimapShader, "viewAngle" ),     viewAngle );
+  glUniform1f( glGetUniformLocation( minimapShader, "maxDistance" ),   maxDistance );
+  glUniform1i( glGetUniformLocation( minimapShader, "horizonLine" ),   horizonLine );
+  glUniform1f( glGetUniformLocation( minimapShader, "heightScalar" ),  heightScalar );
+  glUniform1f( glGetUniformLocation( minimapShader, "offsetScalar" ),  offsetScalar );
+  glUniform1f( glGetUniformLocation( minimapShader, "fogScalar" ),     fogScalar );
+  glUniform1f( glGetUniformLocation( minimapShader, "stepIncrement" ), stepIncrement );
+  glUniform1f( glGetUniformLocation( minimapShader, "FoVScalar" ),     FoVScalar );
+
+  // dispatch to draw into render texture
+  // glDispatchCompute( std::ceil( totalScreenWidth / ( 256. ) ), 1, 1 );
+  glDispatchCompute( std::ceil( totalScreenWidth / ( 64 ) ), 1, 1 );
 
 
 
@@ -189,7 +206,7 @@ void engine::drawEverything() {
   glUniform1f( glGetUniformLocation( renderShader, "FoVScalar" ),     FoVScalar );
 
   // dispatch to draw into render texture
-  glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
+  // glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
   glQueryCounter( queryID[1], GL_TIMESTAMP );
 
   GLint timeAvailable = 0;

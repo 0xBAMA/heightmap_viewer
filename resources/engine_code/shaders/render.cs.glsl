@@ -44,24 +44,14 @@ uniform float FoVScalar;
 
 
 void drawVerticalLine( const uint x, const float yBottom, const float yTop, const uvec4 col ){
-  // // this method is too general - need to break on yTop < yBottom - maybe good for another application?
-  // uint yMax = imageSize( renderTexture ).y;
-  // y1 = clamp( y1, 0, yMax );
-  // y2 = clamp( y2, 0, yMax );
-  // for( uint y = min( y1, y2 ); y <= max( y1, y2 ); y++ ){
-  //   imageStore( renderTexture, ivec2( x, y ), col );
-  // }
-
   const int yMin = clamp( int( yBottom ), 0, imageSize( renderTexture ).y );
   const int yMax = clamp( int(  yTop  ), 0, imageSize( renderTexture ).y );
-
   if( yMin > yMax ) return;
 
   for( int y = yMin; y < yMax; y++ ){
     imageStore( renderTexture, ivec2( x, y ), col );
   }
 }
-
 
 mat2 rotate2D( float r ){
   return mat2( cos( r ), sin( r ), -sin( r ), cos( r ));
@@ -91,7 +81,9 @@ void main() {
 
     if( heightOnScreen > yBuffer ){
       const uvec4 colorSample  = imageLoad( colormap, samplePosition );
-      drawVerticalLine( myXIndex, yBuffer, heightOnScreen, uvec4( colorSample.xyz, uint( max( 0, 255 - dSample * fogScalar ) ) ) );
+      // float distanceToColumn = sqrt( pow( dSample, 2 ) + pow( viewerHeight - heightSample, 2) ); // don't like how this looked
+      uint depthTerm = uint( max( 0, 255 - dSample * fogScalar ) );
+      drawVerticalLine( myXIndex, yBuffer, heightOnScreen, uvec4( colorSample.xyz, depthTerm ) );
       yBuffer = uint( heightOnScreen );
     }
   }
