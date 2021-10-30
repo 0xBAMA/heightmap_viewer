@@ -168,7 +168,7 @@ void engine::adjustmentWindow(){
   ImGui::ColorEdit3( "Fog Color", ( float * )&clearColor, 0 );
   ImGui::Text( "" );
 
-  const char* items[] = {
+  const char* items[] = { "XOR",
     "Map  1", "Map  2", "Map  3", "Map  4", "Map  5",
     "Map  6", "Map  7", "Map  8", "Map  9", "Map 10",
     "Map 11", "Map 12", "Map 13", "Map 14", "Map 15",
@@ -182,7 +182,7 @@ void engine::adjustmentWindow(){
 
   if( mapPickerItemCurrent != mapPickerItemPrevious ){
     mapPickerItemPrevious = mapPickerItemCurrent;
-    loadMap( mapPickerItemCurrent + 1 );
+    loadMap( mapPickerItemCurrent );
   }
   ImGui::Unindent();
   ImGui::Text( std::string( " Frame Time: " + std::to_string( prevFrameTimeMs ) + " ms ( " + std::to_string( 1. / ( prevFrameTimeMs / 1000. ) ) + " fps )" ).c_str() );
