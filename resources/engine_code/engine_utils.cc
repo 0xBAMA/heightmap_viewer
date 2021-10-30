@@ -163,21 +163,13 @@ void engine::drawEverything() {
   glUseProgram( minimapShader );
 
   // updating all the uniforms
-  glUniform2i( glGetUniformLocation( minimapShader, "resolution" ),    screenX/4, screenY/3 );
+  glUniform2i( glGetUniformLocation( minimapShader, "resolution" ),    screenX / 4, screenY / 3 );
   glUniform2f( glGetUniformLocation( minimapShader, "viewPosition" ),  viewPosition.x, viewPosition.y );
-  glUniform1i( glGetUniformLocation( minimapShader, "viewerHeight" ),  viewerHeight );
   glUniform1f( glGetUniformLocation( minimapShader, "viewAngle" ),     viewAngle );
-  glUniform1f( glGetUniformLocation( minimapShader, "maxDistance" ),   maxDistance );
-  glUniform1i( glGetUniformLocation( minimapShader, "horizonLine" ),   horizonLine );
-  glUniform1f( glGetUniformLocation( minimapShader, "heightScalar" ),  heightScalar );
-  glUniform1f( glGetUniformLocation( minimapShader, "offsetScalar" ),  offsetScalar );
-  glUniform1f( glGetUniformLocation( minimapShader, "fogScalar" ),     fogScalar );
-  glUniform1f( glGetUniformLocation( minimapShader, "stepIncrement" ), stepIncrement );
-  glUniform1f( glGetUniformLocation( minimapShader, "FoVScalar" ),     FoVScalar );
 
   // dispatch to draw into render texture
-  // glDispatchCompute( std::ceil( totalScreenWidth / ( 256. ) ), 1, 1 );
-  glDispatchCompute( std::ceil( totalScreenWidth / ( 64 ) ), 1, 1 );
+  glDispatchCompute( std::ceil( totalScreenWidth / ( 256. ) ), 1, 1 );
+  // glDispatchCompute( std::ceil( totalScreenWidth / ( 64 ) ), 1, 1 );
 
 
 
@@ -206,7 +198,7 @@ void engine::drawEverything() {
   glUniform1f( glGetUniformLocation( renderShader, "FoVScalar" ),     FoVScalar );
 
   // dispatch to draw into render texture
-  // glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
+  glDispatchCompute( std::ceil( totalScreenWidth / 64. ), 1, 1 );
   glQueryCounter( queryID[1], GL_TIMESTAMP );
 
   GLint timeAvailable = 0;
@@ -279,9 +271,9 @@ void engine::handleInput(){
     positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -5. : -1);
 
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))
-    viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1, positionAdjust( 0 );
+    viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))
-    viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1, positionAdjust( 0 );
+    viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
 
   if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Home )))
     horizonLine += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
@@ -323,9 +315,8 @@ void engine::positionAdjust( float amt ){
   glm::mat2 rotate = glm::mat2( cos( viewAngle ), sin( viewAngle ), -sin( viewAngle ), cos( viewAngle ) );
   glm::vec2 direction = rotate * glm::vec2( 1., 0. );
   viewPosition += amt * direction;
-  int heightref = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y ))) + 15;
-  viewerHeight = std::max( viewerHeight * heightScalar, heightref * heightScalar );
-  viewerHeight /= heightScalar;
+  int heightref = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y )));
+  viewerHeight = std::max( viewerHeight, heightref );
 }
 
 void engine::loadMap( int index ){

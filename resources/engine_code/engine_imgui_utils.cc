@@ -154,7 +154,7 @@ void engine::adjustmentWindow(){
   ImGui::Text( " Adjustment of Render parameters");
 
   ImGui::Indent();
-  ImGui::SliderInt( "Height", &viewerHeight, 0, 500, "%d" );
+  ImGui::SliderInt( "Height", &viewerHeight, 0, 1800, "%d" );
   ImGui::SliderFloat2( "Position", (float*)&viewPosition, 0, 1024, "%.3f" );
   ImGui::SliderFloat( "Angle", &viewAngle, -3.14159265, 3.14159265, "%.3f" );
   ImGui::SliderFloat( "Max Distance", &maxDistance, 10, 5000, "%.3f" );

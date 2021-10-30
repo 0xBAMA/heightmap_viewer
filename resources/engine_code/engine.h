@@ -33,16 +33,16 @@ private:
   std::vector<unsigned char> colormap;
 
   // renderer state
-  glm::vec2 viewPosition = glm::vec2( -950, 1245 );
-  int viewerHeight       = 1575;
+  glm::vec2 viewPosition = glm::vec2( 512, 512 );
+  int viewerHeight       = 105;
   float viewAngle        = -0.425;
-  float maxDistance      = 3000.;
-  int horizonLine        = 1486;
-  float heightScalar     = 900.0;
-  float offsetScalar     = 300.;
-  float fogScalar        = 0.017;
+  float maxDistance      = 600.;
+  int horizonLine        = 750;
+  float heightScalar     = 150.0;
+  float offsetScalar     = 0.;
+  float fogScalar        = 1.15;
   float stepIncrement    = 0.0;
-  float FoVScalar        = 0.275;
+  float FoVScalar        = 1.12;
   // float FoVScalar        = 3.14159265 / 4.;
 
 

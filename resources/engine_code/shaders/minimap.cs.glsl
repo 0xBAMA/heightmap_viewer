@@ -16,37 +16,48 @@ uniform ivec2 resolution;
 uniform vec2 viewPosition;
 
 // viewer height
-uniform int viewerHeight;
+// uniform int viewerHeight;
+const int viewerHeight = 300;
 
 // view direction angle
 uniform float viewAngle;
 
 // maximum traversal
-uniform float maxDistance;
+// uniform float maxDistance;
+const float maxDistance = 400;
 
 // horizon line position
-uniform int horizonLine;
+// uniform int horizonLine;
+const int horizonLine = 1000;
 
 // scale value for height
-uniform float heightScalar;
+// uniform float heightScalar;
+const float heightScalar = 150;
 
 // scale the side-to-side spread
-uniform float offsetScalar;
+// uniform float offsetScalar;
+const float offsetScalar = 110;
 
 // scalar for fog distance
-uniform float fogScalar;
+// uniform float fogScalar;
 
 // increase in step size as you get farther from the camera
-uniform float stepIncrement; // I've seen values of 0.005 and 0.2
+// uniform float stepIncrement; // I've seen values of 0.005 and 0.2
 
 // adjustment for the FoV
-uniform float FoVScalar;
+// uniform float FoVScalar;
+const float FoVScalar = 0.275;
 
 // need to figure out which parts of this are going to be static, and which parts are dynamic
 
 // need masked access to the heightmap - circular mask for the heightmap
 // center point being located some distance "in front of" the viewers position - along the direction vector
 
+
+
+
+
+uvec4 backgroundColor = uvec4( 255, 0, 0, 255 );
 
 void drawVerticalLine( const uint x, const float yBottom, const float yTop, const uvec4 col ){
   // // this method is too general - need to break on yTop < yBottom - maybe good for another application?
@@ -100,11 +111,13 @@ mat2 rotate2D( float r ){
 }
 
 void main() {
-  const float wPixels    = imageSize( renderTexture ).x;
-  const float hPixels    = imageSize( renderTexture ).y;
-  const int myXIndex     = int(gl_GlobalInvocationID.x);
-  // float yBuffer          = hPixels - resolution.y;
-  float yBuffer          = 0;
+
+  const float wPixels    = resolution.x;
+  const float hPixels    = imageSize( minimapTexture ).y;
+  const float myXIndex   = gl_GlobalInvocationID.x;
+  float yBuffer          = 13. * hPixels / 24.;
+
+  if( myXIndex > wPixels ) return;
 
   // FoV considerations
   //   mapping [0..wPixels] to [-1..1]
@@ -115,26 +128,20 @@ void main() {
   vec2 startCenter = viewPosition - 200 * direction;
 
   const vec2 forwards = rotate2D( viewAngle ) * vec2( 1, 0 );
-  // const vec2 fixedDirection = direction * ( dot( direction, forwards ) / dot( forwards, forwards ) );
-  const vec2 fixedDirection = direction * ( dot( forwards, forwards ) / dot( direction, forwards ) );
-
-  // if( myXIndex > resolution.x ) return;
+  const vec2 fixedDirection = direction * ( dot( direction, forwards ) / dot( forwards, forwards ) );
 
   // need a side-to-side adjust to give some spread - CPU side adjustment scalar needs to be added
   vec3 sideVector        = cross( vec3( forwards.x, 0., forwards.y ), vec3( 0., 1., 0. ) );
-  // vec2 viewPositionLocal = viewPosition + sideVector.xz * FoVAdjust * offsetScalar;
   vec2 viewPositionLocal = startCenter + sideVector.xz * FoVAdjust * offsetScalar;
 
-  for( float dSample = 1.0, dz = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz, dz += stepIncrement ){
+  const float dz = 1.0;
+  for( float dSample = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz ){
     const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * fixedDirection );
     const float heightSample    = heightmapReference(samplePosition);
     const float heightOnScreen  = (( heightSample - viewerHeight ) * ( 1. / dSample ) * heightScalar + horizonLine);
 
     if( heightOnScreen > yBuffer ){
-      const uvec4 colorSample  = colormapReference( samplePosition );
-      float distanceToColumn = sqrt( pow( dSample, 2 ) + pow( viewerHeight - heightSample, 2) );
-      uint depthTerm = uint( max( 0, 255 - distanceToColumn * fogScalar ) );
-      drawVerticalLine( myXIndex, yBuffer, heightOnScreen, uvec4( colorSample.xyz, depthTerm ) );
+      drawVerticalLine( int( myXIndex ), yBuffer, heightOnScreen, colormapReference( samplePosition ) );
       yBuffer = uint( heightOnScreen );
     }
   }
