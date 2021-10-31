@@ -159,27 +159,11 @@ void engine::drawEverything() {
 
 
 
-  // compute shader to compute the minimap into the corresponding rendertexture
-  glUseProgram( minimapShader );
-
-  // updating all the uniforms
-  glUniform2i( glGetUniformLocation( minimapShader, "resolution" ),    screenX / 4, screenY / 3 );
-  glUniform2f( glGetUniformLocation( minimapShader, "viewPosition" ),  viewPosition.x, viewPosition.y );
-  glUniform1f( glGetUniformLocation( minimapShader, "viewAngle" ),     viewAngle );
-
-  // dispatch to draw into render texture
-  glDispatchCompute( std::ceil( totalScreenWidth / ( 256. ) ), 1, 1 );
-  // glDispatchCompute( std::ceil( totalScreenWidth / ( 64 ) ), 1, 1 );
-
-
-
-
   // timer query
   GLuint64 startTime, stopTime;
   GLuint queryID[2];
   glGenQueries( 2, queryID );
   glQueryCounter( queryID[0], GL_TIMESTAMP );
-
 
   // compute shader to compute the regular display into the corresponding rendertexture
   glUseProgram( renderShader );
@@ -207,7 +191,42 @@ void engine::drawEverything() {
 
   glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
   glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
-  prevFrameTimeMs = ( stopTime - startTime ) / 1000000.;
+  firstPassFrameTimeMs = ( stopTime - startTime ) / 1000000.;
+
+
+
+
+  // compute shader to compute the minimap into the corresponding rendertexture
+  glQueryCounter( queryID[0], GL_TIMESTAMP );
+  glUseProgram( minimapShader );
+
+  int heightRef = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y )));
+  if ( viewerHeight < heightRef )
+    viewerHeight = heightRef + 5;
+  int viewerElevation = viewerHeight - heightRef;
+  viewerElevation = 35;
+
+
+  // updating all the uniforms
+  glUniform2i( glGetUniformLocation( minimapShader, "resolution" ),      screenX / 4, screenY / 3 );
+  glUniform2f( glGetUniformLocation( minimapShader, "viewPosition" ),    viewPosition.x, viewPosition.y );
+  glUniform1f( glGetUniformLocation( minimapShader, "viewAngle" ),       viewAngle );
+  glUniform1f( glGetUniformLocation( minimapShader, "viewBump" ),        viewBump );
+  glUniform1i( glGetUniformLocation( minimapShader, "viewerElevation" ), viewerElevation );
+
+  // dispatch to draw into render texture
+  glDispatchCompute( std::ceil( totalScreenWidth / ( 256. ) ), 1, 1 );
+  glQueryCounter( queryID[1], GL_TIMESTAMP );
+
+  timeAvailable = 0;
+  while( !timeAvailable )
+    glGetQueryObjectiv( queryID[1], GL_QUERY_RESULT_AVAILABLE, &timeAvailable );
+
+  glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
+  glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
+  secondPassFrameTimeMs = ( stopTime - startTime ) / 1000000.;
+
+
 
   // make sure all shader invocations have finished before displaying the rendertexture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
@@ -233,7 +252,7 @@ void engine::drawEverything() {
   quitConf( &quitConfirmFlag );
 
   // Draw the editor window
-  textEditor();
+  // textEditor();
 
   // adjustments for the renderer state
   adjustmentWindow();
@@ -306,8 +325,11 @@ void engine::handleInput(){
 
 
 int engine::heightmapReference( glm::ivec2 p ){
-  p.x = std::clamp(p.x, 0, 1023);
-  p.y = std::clamp(p.y, 0, 1023);
+  if( p.x < 0 || p.x > worldX || p.y < 0 || p.y > worldY )
+    return 0;
+
+  p.x = std::clamp( p.x, 0, worldX - 1 );
+  p.y = std::clamp( p.y, 0, worldY - 1 );
   return int( heightmap[ ( p.x + 1024 * p.y ) * 4 ] );
 }
 
@@ -315,8 +337,9 @@ void engine::positionAdjust( float amt ){
   glm::mat2 rotate = glm::mat2( cos( viewAngle ), sin( viewAngle ), -sin( viewAngle ), cos( viewAngle ) );
   glm::vec2 direction = rotate * glm::vec2( 1., 0. );
   viewPosition += amt * direction;
-  int heightref = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y )));
-  viewerHeight = std::max( viewerHeight, heightref );
+  int heightRef = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y )));
+  if ( viewerHeight < heightRef )
+    viewerHeight = heightRef + 5;
 }
 
 void engine::loadMap( int index ){
@@ -341,18 +364,79 @@ void engine::loadMap( int index ){
   error = lodepng::decode( colormap, cWidth, cHeight, colormapPath.c_str() );
   if( error ) cout << "error loading colormap data from " << colormapPath << endl;
 
-  // send to GPU
+  worldX = hWidth;
+  worldY = hHeight;
+
+  // send the updated contents to GPU
+  sendToGPU();
+}
+
+void engine::sendToGPU(){
   glActiveTexture( GL_TEXTURE2 );
   glBindTexture( GL_TEXTURE_RECTANGLE, heightmapTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, hWidth, hHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
   glBindImageTexture( 2, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
   glActiveTexture( GL_TEXTURE3 );
   glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, cWidth, cHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
   glBindImageTexture( 3, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 }
 
+
+
+
+
+
+
+
+glm::vec3 engine::surfaceNormal(int x, int y){
+    float scale = 60.0;
+
+    // cardinal directions
+    glm::vec3 n = glm::vec3(0.15) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x + 1][y]), 1.0, 0.0 )); // Positive X
+    n += glm::vec3( 0.15 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x - 1][y] - erosionModel[x][y] ), 1.0, 0.0 )); // Negative X
+    n += glm::vec3( 0.15 ) * glm::normalize( glm::vec3( 0.0, 1.0, scale * ( erosionModel[x][y] - erosionModel[x][y + 1] )));  // Positive Y
+    n += glm::vec3( 0.15 ) * glm::normalize( glm::vec3( 0.0, 1.0, scale * ( erosionModel[x][y - 1] - erosionModel[x][y] )));  // Negative Y
+
+    // diagonals
+    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x + 1][y + 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x + 1][y + 1]) / sqrt( 2 )));
+    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x + 1][y - 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x + 1][y - 1]) / sqrt( 2 )));
+    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x - 1][y + 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x - 1][y + 1]) / sqrt( 2 )));
+    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x - 1][y - 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x - 1][y - 1]) / sqrt( 2 )));
+
+    return n;
+}
+
+
+void engine::prepareHeightmapFromErosionModel(){
+  // goal here is to go from the floating point heightmap model to the four channel unsigned char
+  // array, as required by the GPU - heightmap is grayscale, colormap is initialized with normals
+
+  // once this is completed,
+
+  heightmap.resize(worldX * worldY * 4);
+  colormap.resize( worldX * worldY * 4);
+
+  for(int x = 0; x < worldX; x++){
+    for(int y = 0; y < worldY; y++){
+
+      int index = ( x + y * worldX ) * 4;
+      unsigned char modelRef = static_cast< unsigned char >( erosionModel[ x ][ y ] * 255 );
+      glm::vec3    normalRef = surfaceNormal( x, y ); // put x,y,z into colormap
+
+      heightmap[ index + 0 ] = modelRef;
+      heightmap[ index + 1 ] = modelRef;
+      heightmap[ index + 2 ] = modelRef;
+      heightmap[ index + 3 ] = 255;
+
+      colormap[ index + 0 ] = static_cast< unsigned char >( ( normalRef.x + 0.5 ) * 127 );
+      colormap[ index + 1 ] = static_cast< unsigned char >( ( normalRef.y + 0.5 ) * 127 );
+      colormap[ index + 2 ] = static_cast< unsigned char >( ( normalRef.z + 0.5 ) * 127 );
+      colormap[ index + 3 ] = 255;
+    }
+  }
+}
 
 void engine::quit() {
   cout << "  Shutting down...................................";

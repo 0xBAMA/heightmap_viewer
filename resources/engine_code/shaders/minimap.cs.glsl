@@ -19,6 +19,9 @@ uniform vec2 viewPosition;
 // uniform int viewerHeight;
 const int viewerHeight = 300;
 
+// how high the viewer is off the heightmap
+uniform int viewerElevation = 300;
+
 // view direction angle
 uniform float viewAngle;
 
@@ -37,6 +40,9 @@ const float heightScalar = 150;
 // scale the side-to-side spread
 // uniform float offsetScalar;
 const float offsetScalar = 110;
+
+// how much to move the player back
+uniform float viewBump;
 
 // scalar for fog distance
 // uniform float fogScalar;
@@ -77,15 +83,18 @@ void drawVerticalLine( const uint x, const float yBottom, const float yTop, cons
   }
 }
 
+vec2 globalForwards = vec2(0);
+
 bool insideMask(ivec2 queryLocation){
-  return distance( vec2(queryLocation), viewPosition ) < 100.;
-  // return true;
+  return distance( vec2(queryLocation), viewPosition + ivec2( viewBump * globalForwards ) ) < 100.;
+  // return distance( vec2(queryLocation), viewPosition ) < 100.;
 }
 
 uint heightmapReference(ivec2 location){
+  location += ivec2( viewBump * globalForwards );
   if( insideMask( location ) ){
     if( distance( location, viewPosition) < 1.618){
-      return imageLoad( heightmap, location ).r + 32;
+      return imageLoad( heightmap, location ).r + viewerElevation;
     }else{
       return imageLoad( heightmap, location ).r;
     }
@@ -95,6 +104,7 @@ uint heightmapReference(ivec2 location){
 }
 
 uvec4 colormapReference(ivec2 location){
+  location += ivec2( viewBump * globalForwards );
   if( insideMask( location ) ){
     if( distance( location, viewPosition) < 1.618){
       return uvec4( 255, 0, 0, 255 );
@@ -127,7 +137,7 @@ void main() {
   const vec2 direction   = rotation * vec2( 1, 0 );
   vec2 startCenter = viewPosition - 200 * direction;
 
-  const vec2 forwards = rotate2D( viewAngle ) * vec2( 1, 0 );
+  const vec2 forwards = globalForwards = rotate2D( viewAngle ) * vec2( 1, 0 );
   const vec2 fixedDirection = direction * ( dot( direction, forwards ) / dot( forwards, forwards ) );
 
   // need a side-to-side adjust to give some spread - CPU side adjustment scalar needs to be added

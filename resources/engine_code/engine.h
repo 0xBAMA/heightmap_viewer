@@ -15,7 +15,17 @@ private:
 	SDL_Window * window;
 	SDL_GLContext GLcontext;
   ImVec4 clearColor;
-  float prevFrameTimeMs = 0;
+  float firstPassFrameTimeMs = 0;
+  float secondPassFrameTimeMs = 0;
+  float erosionPassTimeMs = 0;
+
+  int erosionNumSteps = 500;
+  void erode( int steps ){ };
+
+  void generateDiamondSquare();
+  void prepareHeightmapFromErosionModel();
+  glm::vec3 surfaceNormal(int x, int y);
+  float erosionModel[ 1024 ][ 1024 ] = {{ 0 }};
 
   // holds the renderer results, before being presented
   GLuint mainRenderTexture; // main view
@@ -25,24 +35,29 @@ private:
     // - vector of ints on CPU
     // - texture data on GPU
 
+  int worldX;
+  int worldY;
+
   GLuint heightmapTexture; // world height
   std::vector<unsigned char> heightmap;
   void loadMap( int index );
+  void sendToGPU();
 
   GLuint colormapTexture; // world color
   std::vector<unsigned char> colormap;
 
   // renderer state
   glm::vec2 viewPosition = glm::vec2( 512, 512 );
-  int viewerHeight       = 105;
+  int viewerHeight       = 75;
   float viewAngle        = -0.425;
-  float maxDistance      = 600.;
-  int horizonLine        = 750;
-  float heightScalar     = 150.0;
+  float maxDistance      = 800.;
+  int horizonLine        = 500;
+  float heightScalar     = 451.0;
   float offsetScalar     = 0.;
-  float fogScalar        = 1.15;
+  float fogScalar        = 0.451;
   float stepIncrement    = 0.0;
-  float FoVScalar        = 1.12;
+  float FoVScalar        = 0.85;
+  float viewBump         = 80;
   // float FoVScalar        = 3.14159265 / 4.;
 
 

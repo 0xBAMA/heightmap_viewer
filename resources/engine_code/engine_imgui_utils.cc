@@ -154,6 +154,7 @@ void engine::adjustmentWindow(){
   ImGui::Text( " Adjustment of Render parameters");
 
   ImGui::Indent();
+  ImGui::Text( "Main" );
   ImGui::SliderInt( "Height", &viewerHeight, 0, 1800, "%d" );
   ImGui::SliderFloat2( "Position", (float*)&viewPosition, 0, 1024, "%.3f" );
   ImGui::SliderFloat( "Angle", &viewAngle, -3.14159265, 3.14159265, "%.3f" );
@@ -176,8 +177,8 @@ void engine::adjustmentWindow(){
     "Map 21", "Map 22", "Map 23", "Map 24", "Map 25",
     "Map 26", "Map 27", "Map 28", "Map 29", "Map 30"};
 
-  static int mapPickerItemCurrent  = 0;
-  static int mapPickerItemPrevious = 0;
+  static int mapPickerItemCurrent  = -1;
+  static int mapPickerItemPrevious = -1;
   ImGui::Combo("Map Picker", &mapPickerItemCurrent, items, IM_ARRAYSIZE(items));
 
   if( mapPickerItemCurrent != mapPickerItemPrevious ){
@@ -185,7 +186,12 @@ void engine::adjustmentWindow(){
     loadMap( mapPickerItemCurrent );
   }
   ImGui::Unindent();
-  ImGui::Text( std::string( " Frame Time: " + std::to_string( prevFrameTimeMs ) + " ms ( " + std::to_string( 1. / ( prevFrameTimeMs / 1000. ) ) + " fps )" ).c_str() );
+  ImGui::Text( std::string( " Render Pass Time: " + std::to_string( firstPassFrameTimeMs ) + " ms " ).c_str() );
+  ImGui::Text( std::string( " Minimap Pass Time: " + std::to_string( secondPassFrameTimeMs ) + " ms " ).c_str() );
+
+  const float totalFrameTime = firstPassFrameTimeMs + secondPassFrameTimeMs;
+  ImGui::Text( std::string( " Total Frame Time: " + std::to_string( totalFrameTime ) + " ms ( " + std::to_string( 1. / ( totalFrameTime / 1000. ) ) + " fps )" ).c_str() );
+
 
   ImGui::End();
 }
