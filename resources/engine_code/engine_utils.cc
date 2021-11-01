@@ -126,7 +126,9 @@ void engine::glSetup() {
   std::random_device rd;  //Will be used to obtain a seed for the random number engine
   std::mt19937 gen( rd() ); //Standard mersenne_twister_engine seeded with rd()
   std::uniform_int_distribution< int > distrib( 1, 30 );
+
   loadMap( distrib( gen ) );
+  generateDiamondSquare();
 
   cout << "done." << endl;
 
@@ -157,6 +159,16 @@ void engine::drawEverything() {
   //  ...
 
 
+
+  // these will be done in a second thread, so as not to hold up the main thread
+  erode(erosionNumStepsPerFrame);
+  prepareMapsFromErosionModel();
+
+
+  // this will happen in the main thread, to ensure synchronization
+  sendToGPU(); // send the prepared contents to the GPU
+  // then also invoke the shade shader, to color the heightmap, given the input info
+  //    - note that normal vector will be available in the initial colormap
 
 
   // timer query
@@ -204,7 +216,9 @@ void engine::drawEverything() {
   if ( viewerHeight < heightRef )
     viewerHeight = heightRef + 5;
   int viewerElevation = viewerHeight - heightRef;
-  viewerElevation = 35;
+
+  if( !adaptiveHeight )
+    viewerElevation = 35;
 
 
   // updating all the uniforms
@@ -226,10 +240,10 @@ void engine::drawEverything() {
   glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
   secondPassFrameTimeMs = ( stopTime - startTime ) / 1000000.;
 
-
-
   // make sure all shader invocations have finished before displaying the rendertexture
   glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+
 
   // present render texture
   glUseProgram( displayShader );
@@ -390,30 +404,138 @@ void engine::sendToGPU(){
 
 
 
+
+void engine::generateDiamondSquare(){
+  long unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+  std::default_random_engine engine{seed};
+  std::uniform_real_distribution<float> distribution{0, 1};
+
+  worldX = worldY = 1024;
+
+#ifdef TILE
+  constexpr auto size = 1024;
+#else
+  constexpr auto size = 1025; // for no_wrap
+#endif
+
+  constexpr auto edge = size - 1;
+
+  uint16_t map[size][size] = {{0}};
+  map[0][0] = map[edge][0] = map[0][edge] = map[edge][edge] = std::numeric_limits<uint16_t>::max()/2;
+
+#ifdef TILE
+  heightfield::diamond_square_wrap
+#else
+  heightfield::diamond_square_no_wrap
+#endif
+    (size,
+    // random
+    [&engine, &distribution](float range)
+    {
+      return distribution(engine) * range;
+    },
+    // variance
+    [](int level) -> float
+    {
+      return static_cast<float>(std::numeric_limits<uint16_t>::max()/2) * std::pow(0.5f, level);
+      // return static_cast<float>(std::numeric_limits<uint16_t>::max()/1.6) * std::pow(0.5f, level);
+    },
+    // at
+    [&map](int x, int y) -> uint16_t&
+    {
+      return map[y][x];
+    }
+  );
+
+  for( int x = 0; x < worldX; x++ )
+    for( int y = 0; y < worldY; y++ )
+      erosionModel[ x ][ y ] = map[ x ][ y ] / static_cast< float >( std::numeric_limits< uint16_t >::max() );
+}
+
 glm::vec3 engine::surfaceNormal(int x, int y){
     float scale = 60.0;
+    float myPoint = erosionModel[x][y];
+    float sqrt2 = sqrt( 2 );
 
     // cardinal directions
-    glm::vec3 n = glm::vec3(0.15) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x + 1][y]), 1.0, 0.0 )); // Positive X
-    n += glm::vec3( 0.15 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x - 1][y] - erosionModel[x][y] ), 1.0, 0.0 )); // Negative X
-    n += glm::vec3( 0.15 ) * glm::normalize( glm::vec3( 0.0, 1.0, scale * ( erosionModel[x][y] - erosionModel[x][y + 1] )));  // Positive Y
-    n += glm::vec3( 0.15 ) * glm::normalize( glm::vec3( 0.0, 1.0, scale * ( erosionModel[x][y - 1] - erosionModel[x][y] )));  // Negative Y
+    glm::vec3 n = 0.15f * glm::normalize( glm::vec3( scale * ( myPoint - erosionModel[x + 1][y]), 1.0, 0.0 )); // Positive X
+    n += 0.15f * glm::normalize( glm::vec3( scale * ( erosionModel[x - 1][y] - myPoint ), 1.0, 0.0 )); // Negative X
+    n += 0.15f * glm::normalize( glm::vec3( 0.0, 1.0, scale * ( myPoint - erosionModel[x][y + 1] )));  // Positive Y
+    n += 0.15f * glm::normalize( glm::vec3( 0.0, 1.0, scale * ( erosionModel[x][y - 1] - myPoint )));  // Negative Y
+
+    float pp = erosionModel[x + 1][y + 1];
+    float pm = erosionModel[x + 1][y - 1];
+    float mp = erosionModel[x - 1][y + 1];
+    float mm = erosionModel[x - 1][y - 1];
 
     // diagonals
-    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x + 1][y + 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x + 1][y + 1]) / sqrt( 2 )));
-    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x + 1][y - 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x + 1][y - 1]) / sqrt( 2 )));
-    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x - 1][y + 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x - 1][y + 1]) / sqrt( 2 )));
-    n += glm::vec3( 0.1 ) * glm::normalize( glm::vec3( scale * ( erosionModel[x][y] - erosionModel[x - 1][y - 1] ) / sqrt( 2 ), sqrt( 2 ), scale * ( erosionModel[x][y] - erosionModel[x - 1][y - 1]) / sqrt( 2 )));
+    n += 0.1f * glm::normalize( glm::vec3( scale * ( myPoint - pp ) / sqrt2, sqrt2, scale * ( myPoint - pp) / sqrt2));
+    n += 0.1f * glm::normalize( glm::vec3( scale * ( myPoint - pm ) / sqrt2, sqrt2, scale * ( myPoint - pm) / sqrt2));
+    n += 0.1f * glm::normalize( glm::vec3( scale * ( myPoint - mp ) / sqrt2, sqrt2, scale * ( myPoint - mp) / sqrt2));
+    n += 0.1f * glm::normalize( glm::vec3( scale * ( myPoint - mm ) / sqrt2, sqrt2, scale * ( myPoint - mm) / sqrt2));
 
     return n;
 }
 
+struct particle{
+	glm::vec2 position;
+	glm::vec2 speed = glm::vec2(0.0);
 
-void engine::prepareHeightmapFromErosionModel(){
+	float volume = 1.0;
+	float sedimentFraction = 0.0;
+};
+
+void engine::erode( int steps ){
+  std::default_random_engine gen;
+  std::uniform_int_distribution<int> distX( 0, worldX - 1 );
+  std::uniform_int_distribution<int> distY( 0, worldY - 1 );
+
+  // run the simulation for the specified number of steps
+  for( int i = 0; i < steps; i++ ){
+    //spawn a new particle at a random position
+    particle p;
+    p.position = glm::vec2( distX( gen ), distY( gen ) );
+
+    //while the droplet exists (drop volume > 0)
+    while( p.volume > 0 ){
+      glm::ivec2 initialPosition = p.position;    // cache the initial position
+      glm::vec3 normal = surfaceNormal( initialPosition.x, initialPosition.y );
+
+      // newton's second law to calculate acceleration
+      p.speed += dt * glm::vec2( normal.x, normal.z ) / ( p.volume * density ); // F = MA, so A = F/M
+
+      // update position based on new speed
+      p.position += dt * p.speed;
+
+      // friction factor to attenuate speed
+      p.speed *= ( 1.0 - dt * friction );
+
+      // discard the droplet if it has gone out of bounds
+      if( !glm::all( glm::greaterThanEqual( p.position, glm::vec2( 0 ) ) ) ||
+          !glm::all( glm::lessThan( glm::ivec2( p.position ), glm::ivec2( worldX, worldY ) ) ) ) break;
+
+      // sediment capacity
+      glm::ivec2 ref = glm::ivec2( p.position.x, p.position.y );
+      float maxSediment = p.volume * glm::length( p.speed ) * ( erosionModel[ initialPosition.x ][ initialPosition.y ] - erosionModel[ ref.x ][ ref.y ] );
+      maxSediment = std::max( maxSediment, 0.0f ); // don't want negative values here
+      float sedimentDiff = maxSediment - p.sedimentFraction;
+
+      // update sediment content, deposit on the heightmap
+      p.sedimentFraction += dt * depositionRate * sedimentDiff;
+      erosionModel[ initialPosition.x ][ initialPosition.y ] -= dt * p.volume * depositionRate * sedimentDiff;
+
+      p.volume *= ( 1.0 - dt * evaporationRate ); // evaporate some of the droplet
+    }
+  }
+}
+
+
+void engine::prepareMapsFromErosionModel(){
   // goal here is to go from the floating point heightmap model to the four channel unsigned char
   // array, as required by the GPU - heightmap is grayscale, colormap is initialized with normals
 
-  // once this is completed,
+  // once this is completed, sendToGPU can be called, to send the heightmap and colormap arrays
 
   heightmap.resize(worldX * worldY * 4);
   colormap.resize( worldX * worldY * 4);
@@ -425,14 +547,20 @@ void engine::prepareHeightmapFromErosionModel(){
       unsigned char modelRef = static_cast< unsigned char >( erosionModel[ x ][ y ] * 255 );
       glm::vec3    normalRef = surfaceNormal( x, y ); // put x,y,z into colormap
 
+      // cout << "modelRef " << x << " " << y << " " << int(modelRef) << endl;
+
       heightmap[ index + 0 ] = modelRef;
       heightmap[ index + 1 ] = modelRef;
       heightmap[ index + 2 ] = modelRef;
       heightmap[ index + 3 ] = 255;
 
-      colormap[ index + 0 ] = static_cast< unsigned char >( ( normalRef.x + 0.5 ) * 127 );
-      colormap[ index + 1 ] = static_cast< unsigned char >( ( normalRef.y + 0.5 ) * 127 );
-      colormap[ index + 2 ] = static_cast< unsigned char >( ( normalRef.z + 0.5 ) * 127 );
+      // cout << "vector is " << glm::length( normalRef ) << " units long" << endl;
+      normalRef.y *= 0.001;
+      normalRef = glm::normalize( normalRef );
+
+      colormap[ index + 0 ] = static_cast< unsigned char >( ( ( normalRef.x + 1. ) / 2.) * 255 );
+      colormap[ index + 1 ] = static_cast< unsigned char >( ( ( normalRef.y + 1. ) / 2.) * 255 );
+      colormap[ index + 2 ] = static_cast< unsigned char >( ( ( normalRef.z + 1. ) / 2.) * 255 );
       colormap[ index + 3 ] = 255;
     }
   }

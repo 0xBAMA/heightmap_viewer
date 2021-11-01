@@ -164,6 +164,7 @@ void engine::adjustmentWindow(){
   ImGui::SliderFloat( "Side-to-Side Offset", &offsetScalar, 0, 300., "%.3f" );
   ImGui::SliderFloat( "Step Increment", &stepIncrement, 0., 0.5, "%.3f" );
   ImGui::SliderFloat( "FoV", &FoVScalar, 0.001, 15.0, "%.3f" );
+  ImGui::Checkbox( "Height follows Player Height", &adaptiveHeight );
   ImGui::Text( "" );
   ImGui::SliderFloat( "Fog Scale", &fogScalar, 0., 1.5, "%.3f" );
   ImGui::ColorEdit3( "Fog Color", ( float * )&clearColor, 0 );

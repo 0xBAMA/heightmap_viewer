@@ -19,12 +19,21 @@ private:
   float secondPassFrameTimeMs = 0;
   float erosionPassTimeMs = 0;
 
-  int erosionNumSteps = 500;
-  void erode( int steps ){ };
+
+	// erosion simulation parameters
+	float dt = 1.2; // timestep
+	float density = 1.0; // to determine intertia
+	float evaporationRate = 0.001;
+	float depositionRate = 0.1;
+	float minimumVolume = 0.01;
+	float friction = 0.05;
+  int erosionNumStepsPerFrame = 200;
+  bool runErosion = false;
 
   void generateDiamondSquare();
-  void prepareHeightmapFromErosionModel();
-  glm::vec3 surfaceNormal(int x, int y);
+  glm::vec3 surfaceNormal( int x, int y );
+  void erode( int steps );
+  void prepareMapsFromErosionModel();
   float erosionModel[ 1024 ][ 1024 ] = {{ 0 }};
 
   // holds the renderer results, before being presented
@@ -58,7 +67,7 @@ private:
   float stepIncrement    = 0.0;
   float FoVScalar        = 0.85;
   float viewBump         = 80;
-  // float FoVScalar        = 3.14159265 / 4.;
+  bool adaptiveHeight    = false;
 
 
   // keeps track of when the heightmap has changed and needs to be re-sent
