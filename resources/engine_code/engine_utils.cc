@@ -129,6 +129,8 @@ void engine::glSetup() {
 
   loadMap( distrib( gen ) );
   generateDiamondSquare();
+  erode( 42069 );
+
 
   cout << "done." << endl;
 
@@ -155,20 +157,28 @@ void engine::drawEverything() {
 
 
 
-  // compute shader to compute the colormap
-  //  ...
 
 
 
   // these will be done in a second thread, so as not to hold up the main thread
-  erode(erosionNumStepsPerFrame);
-  prepareMapsFromErosionModel();
+  if( !erosionRunning ){
+    // start the erosion thread
+    // set erosionRunning to true
+    erode(erosionNumStepsPerFrame);
+    prepareMapsFromErosionModel();
+    // once complete, make sure erosionRunning is set false
+
+    // this will happen in the main thread, to ensure synchronization
+    sendToGPU(); // send the prepared contents to the GPU
+    // then also invoke the shade shader, to color the heightmap, given the input info
+    //    - note that normal vector will be available in the initial colormap
+  }
+
+  // compute shader to compute the colormap
+  glUseProgram( shadeShader );
+  glDispatchCompute( worldX / 16, worldY / 16, 1 );
 
 
-  // this will happen in the main thread, to ensure synchronization
-  sendToGPU(); // send the prepared contents to the GPU
-  // then also invoke the shade shader, to color the heightmap, given the input info
-  //    - note that normal vector will be available in the initial colormap
 
 
   // timer query
@@ -226,6 +236,7 @@ void engine::drawEverything() {
   glUniform2f( glGetUniformLocation( minimapShader, "viewPosition" ),    viewPosition.x, viewPosition.y );
   glUniform1f( glGetUniformLocation( minimapShader, "viewAngle" ),       viewAngle );
   glUniform1f( glGetUniformLocation( minimapShader, "viewBump" ),        viewBump );
+  glUniform1f( glGetUniformLocation( minimapShader, "minimapScalar" ),   minimapScalar );
   glUniform1i( glGetUniformLocation( minimapShader, "viewerElevation" ), viewerElevation );
 
   // dispatch to draw into render texture
@@ -447,6 +458,21 @@ void engine::generateDiamondSquare(){
       return map[y][x];
     }
   );
+
+  // // first pass establishes minimum
+  // uint16_t currentMin = std::numeric_limits< uint16_t >::max();
+  // uint16_t currentMax = 0;
+  // for( int x = 0; x < worldX; x++ )
+  //   for( int y = 0; y < worldY; y++ )
+  //     currentMin = std::min( currentMin, map[ x ][ y ] ), currentMax = std::max( currentMax, map[ x ][ y ] );
+  //
+  // // offset by minimum value
+  // currentMin++; // make sure there is at least one unit of height at the lowest point
+  // currentMax--;
+  // for( int x = 0; x < worldX; x++ )
+  //   for( int y = 0; y < worldY; y++ )
+  //     erosionModel[ x ][ y ] = ( ( 1. ) / ( currentMax - currentMin ) ) * ( map[ x ][ y ] - currentMin );
+
 
   for( int x = 0; x < worldX; x++ )
     for( int y = 0; y < worldY; y++ )

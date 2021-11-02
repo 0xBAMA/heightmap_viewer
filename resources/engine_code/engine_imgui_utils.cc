@@ -166,6 +166,9 @@ void engine::adjustmentWindow(){
   ImGui::SliderFloat( "FoV", &FoVScalar, 0.001, 15.0, "%.3f" );
   ImGui::Checkbox( "Height follows Player Height", &adaptiveHeight );
   ImGui::Text( "" );
+  ImGui::SliderFloat( "View Bump", &viewBump, 0.0, 500.0, "%.3f" );
+  ImGui::SliderFloat( "Minimap Scalar", &minimapScalar, 0.1, 5.0, "%.3f" );
+  ImGui::Text( "" );
   ImGui::SliderFloat( "Fog Scale", &fogScalar, 0., 1.5, "%.3f" );
   ImGui::ColorEdit3( "Fog Color", ( float * )&clearColor, 0 );
   ImGui::Text( "" );

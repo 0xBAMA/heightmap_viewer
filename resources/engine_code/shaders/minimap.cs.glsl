@@ -44,6 +44,9 @@ const float offsetScalar = 110;
 // how much to move the player back
 uniform float viewBump;
 
+// minimap scale factor
+uniform float minimapScalar;
+
 // scalar for fog distance
 // uniform float fogScalar;
 
@@ -86,14 +89,15 @@ void drawVerticalLine( const uint x, const float yBottom, const float yTop, cons
 vec2 globalForwards = vec2(0);
 
 bool insideMask(ivec2 queryLocation){
-  return distance( vec2(queryLocation), viewPosition + ivec2( viewBump * globalForwards ) ) < 100.;
+  return distance( vec2(queryLocation), viewPosition + ivec2( viewBump * globalForwards ) ) < ( 100. / minimapScalar );
   // return distance( vec2(queryLocation), viewPosition ) < 100.;
 }
 
 uint heightmapReference(ivec2 location){
+  location = ivec2( ( vec2( location - viewPosition ) * ( 1. / minimapScalar ) ) + viewPosition );
   location += ivec2( viewBump * globalForwards );
   if( insideMask( location ) ){
-    if( distance( location, viewPosition) < 1.618){
+    if( distance( location, viewPosition ) < ( 1.618 / minimapScalar ) ){
       return imageLoad( heightmap, location ).r + viewerElevation;
     }else{
       return imageLoad( heightmap, location ).r;
@@ -104,9 +108,10 @@ uint heightmapReference(ivec2 location){
 }
 
 uvec4 colormapReference(ivec2 location){
+  location = ivec2( ( vec2( location - viewPosition ) * ( 1. / minimapScalar ) ) + viewPosition );
   location += ivec2( viewBump * globalForwards );
   if( insideMask( location ) ){
-    if( distance( location, viewPosition) < 1.618){
+    if( distance( location, viewPosition ) < ( 1.618 / minimapScalar ) ){
       return uvec4( 255, 0, 0, 255 );
     }else{
       return imageLoad( colormap, location );

@@ -28,7 +28,9 @@ private:
 	float minimumVolume = 0.01;
 	float friction = 0.05;
   int erosionNumStepsPerFrame = 200;
-  bool runErosion = false;
+  bool erosionRunning = false;
+
+
 
   void generateDiamondSquare();
   glm::vec3 surfaceNormal( int x, int y );
@@ -67,6 +69,7 @@ private:
   float stepIncrement    = 0.0;
   float FoVScalar        = 0.85;
   float viewBump         = 80;
+  float minimapScalar    = 0.3;
   bool adaptiveHeight    = false;
 
 
