@@ -129,7 +129,7 @@ void engine::glSetup() {
 
   loadMap( distrib( gen ) );
   generateDiamondSquare();
-  erode( 42069 );
+  erode( 50000 );
 
 
   cout << "done." << endl;
@@ -164,7 +164,7 @@ void engine::drawEverything() {
   if( !erosionRunning ){
     // start the erosion thread
     // set erosionRunning to true
-    erode(erosionNumStepsPerFrame);
+    // erode(erosionNumStepsPerFrame);
     prepareMapsFromErosionModel();
     // once complete, make sure erosionRunning is set false
 
@@ -172,11 +172,11 @@ void engine::drawEverything() {
     sendToGPU(); // send the prepared contents to the GPU
     // then also invoke the shade shader, to color the heightmap, given the input info
     //    - note that normal vector will be available in the initial colormap
+    // compute shader to compute the colormap
+    glUseProgram( shadeShader );
+    glDispatchCompute( worldX / 16, worldY / 16, 1 );
   }
 
-  // compute shader to compute the colormap
-  glUseProgram( shadeShader );
-  glDispatchCompute( worldX / 16, worldY / 16, 1 );
 
 
 
@@ -399,12 +399,22 @@ void engine::loadMap( int index ){
 void engine::sendToGPU(){
   glActiveTexture( GL_TEXTURE2 );
   glBindTexture( GL_TEXTURE_RECTANGLE, heightmapTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
+  // glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &heightmap[0] );
+  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glBindImageTexture( 2, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
   glActiveTexture( GL_TEXTURE3 );
   glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
+  // glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
+  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &colormap[0] );
+  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glBindImageTexture( 3, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 }
 

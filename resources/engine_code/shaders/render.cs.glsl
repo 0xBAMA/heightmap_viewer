@@ -5,9 +5,11 @@ layout( local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
 
 // texture working set
 layout( binding = 0, rgba8ui ) uniform uimage2D renderTexture;
-layout( binding = 1, rgba8ui ) uniform uimage2D minimapTexture;
-layout( binding = 2, rgba8ui ) uniform uimage2D heightmap;
-layout( binding = 3, rgba8ui ) uniform uimage2D colormap;
+// layout( binding = 1, rgba8ui ) uniform uimage2D minimapTexture;
+// layout( binding = 2, rgba8ui ) uniform uimage2D heightmap;
+// layout( binding = 3, rgba8ui ) uniform uimage2D colormap;
+layout( binding = 2 ) uniform sampler2DRect heightmap;
+layout( binding = 3 ) uniform sampler2DRect colormap;
 
 // current screen resolution
 uniform ivec2 resolution;
@@ -74,13 +76,16 @@ void main() {
   vec3 sideVector        = cross( vec3( direction.x, 0., direction.y ), vec3( 0., 1., 0. ) );
   vec2 viewPositionLocal = viewPosition + sideVector.xz * FoVAdjust * offsetScalar;
 
-  for( float dSample = 1.0, dz = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz, dz += stepIncrement ){
-    const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * direction );
-    const float heightSample    = imageLoad( heightmap, samplePosition ).r;
+  // for( float dSample = 1.0, dz = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz, dz += stepIncrement ){
+  for( float dSample = 1.0, dz = 0.2; dSample < maxDistance && yBuffer < hPixels; dSample += dz, dz += stepIncrement ){
+    // const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * direction );
+    // const float heightSample    = imageLoad( heightmap, samplePosition ).r;
+    const float heightSample    = texture( heightmap, viewPositionLocal + dSample * direction ).r * 255;
     const float heightOnScreen  = (( heightSample - viewerHeight ) * ( 1. / dSample ) * heightScalar + horizonLine);
 
     if( heightOnScreen > yBuffer ){
-      const uvec4 colorSample  = imageLoad( colormap, samplePosition );
+      // const uvec4 colorSample  = imageLoad( colormap, samplePosition );
+      const vec4 colorSample  = texture( colormap, viewPositionLocal + dSample * direction ) * 255;
       // float distanceToColumn = sqrt( pow( dSample, 2 ) + pow( viewerHeight - heightSample, 2) ); // don't like how this looked
       uint depthTerm = uint( max( 0, 255 - dSample * fogScalar ) );
       drawVerticalLine( myXIndex, yBuffer, heightOnScreen, uvec4( colorSample.xyz, depthTerm ) );

@@ -28,7 +28,7 @@ private:
 	float minimumVolume = 0.01;
 	float friction = 0.05;
   int erosionNumStepsPerFrame = 200;
-  bool erosionRunning = false;
+  bool erosionRunning = true;
 
 
 

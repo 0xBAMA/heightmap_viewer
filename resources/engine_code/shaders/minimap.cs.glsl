@@ -6,8 +6,10 @@ layout( local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
 // texture working set
 layout( binding = 0, rgba8ui ) uniform uimage2D renderTexture;
 layout( binding = 1, rgba8ui ) uniform uimage2D minimapTexture;
-layout( binding = 2, rgba8ui ) uniform uimage2D heightmap;
-layout( binding = 3, rgba8ui ) uniform uimage2D colormap;
+// layout( binding = 2, rgba8ui ) uniform uimage2D heightmap;
+// layout( binding = 3, rgba8ui ) uniform uimage2D colormap;
+layout( binding = 2 ) uniform sampler2DRect heightmap;
+layout( binding = 3 ) uniform sampler2DRect colormap;
 
 // current screen resolution
 uniform ivec2 resolution;
@@ -68,7 +70,8 @@ const float FoVScalar = 0.275;
 
 uvec4 backgroundColor = uvec4( 255, 0, 0, 255 );
 
-void drawVerticalLine( const uint x, const float yBottom, const float yTop, const uvec4 col ){
+// void drawVerticalLine( const uint x, const float yBottom, const float yTop, const uvec4 col ){
+void drawVerticalLine( const uint x, const float yBottom, const float yTop, const vec4 col ){
   // // this method is too general - need to break on yTop < yBottom - maybe good for another application?
   // uint yMax = imageSize( renderTexture ).y;
   // y1 = clamp( y1, 0, yMax );
@@ -82,42 +85,47 @@ void drawVerticalLine( const uint x, const float yBottom, const float yTop, cons
   if( yMin > yMax ) return;
 
   for( int y = yMin; y < yMax; y++ ){
-    imageStore( minimapTexture, ivec2( x, y ), col );
+    imageStore( minimapTexture, ivec2( x, y ), uvec4( col ) );
   }
 }
 
 vec2 globalForwards = vec2(0);
 
-bool insideMask(ivec2 queryLocation){
-  return distance( vec2(queryLocation), viewPosition + ivec2( viewBump * globalForwards ) ) < ( 100. / minimapScalar );
+bool insideMask( vec2 queryLocation ){
+  return distance( queryLocation, viewPosition + vec2( viewBump * globalForwards ) ) < ( 100. / minimapScalar );
   // return distance( vec2(queryLocation), viewPosition ) < 100.;
 }
 
-uint heightmapReference(ivec2 location){
-  location = ivec2( ( vec2( location - viewPosition ) * ( 1. / minimapScalar ) ) + viewPosition );
-  location += ivec2( viewBump * globalForwards );
+// uint heightmapReference(ivec2 location){
+float heightmapReference( vec2 location ){
+  location = vec2( ( vec2( location - viewPosition ) * ( 1. / minimapScalar ) ) + viewPosition );
+  location += vec2( viewBump * globalForwards );
   if( insideMask( location ) ){
     if( distance( location, viewPosition ) < ( 1.618 / minimapScalar ) ){
-      return imageLoad( heightmap, location ).r + viewerElevation;
+      // return imageLoad( heightmap, location ).r + viewerElevation;
+      return ( texture( heightmap, location ).r * 255 ) + viewerElevation;
     }else{
-      return imageLoad( heightmap, location ).r;
+      // return imageLoad( heightmap, location ).r;
+      return ( texture( heightmap, location ).r * 255 );
     }
   }else{
     return 0;
   }
 }
 
-uvec4 colormapReference(ivec2 location){
-  location = ivec2( ( vec2( location - viewPosition ) * ( 1. / minimapScalar ) ) + viewPosition );
-  location += ivec2( viewBump * globalForwards );
+// uvec4 colormapReference(ivec2 location){
+vec4 colormapReference( vec2 location ){
+  location = vec2( ( vec2( location - viewPosition ) * ( 1. / minimapScalar ) ) + viewPosition );
+  location += vec2( viewBump * globalForwards );
   if( insideMask( location ) ){
     if( distance( location, viewPosition ) < ( 1.618 / minimapScalar ) ){
-      return uvec4( 255, 0, 0, 255 );
+      return vec4( 255, 0, 0, 255 );
     }else{
-      return imageLoad( colormap, location );
+      // return imageLoad( colormap, location );
+      return texture( colormap, location ) * 255;
     }
   }else{
-    return uvec4( 0 );
+    return vec4( 0 );
   }
 }
 
@@ -149,7 +157,7 @@ void main() {
   vec3 sideVector        = cross( vec3( forwards.x, 0., forwards.y ), vec3( 0., 1., 0. ) );
   vec2 viewPositionLocal = startCenter + sideVector.xz * FoVAdjust * offsetScalar;
 
-  const float dz = 1.0;
+  const float dz = 0.25;
   for( float dSample = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz ){
     const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * fixedDirection );
     const float heightSample    = heightmapReference(samplePosition);
