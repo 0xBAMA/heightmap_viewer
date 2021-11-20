@@ -6,7 +6,7 @@ void engine::quitConf(bool *open) {
 
     // create centered window
     ImGui::SetNextWindowPos(ImVec2(totalScreenWidth / 2 - 120, totalScreenHeight / 2 - 25));
-    ImGui::SetNextWindowSize(ImVec2(300, 55));
+    ImGui::SetNextWindowSize(ImVec2(240, 45));
     ImGui::Begin("quit", open, flags);
 
     ImGui::Text("Are you sure you want to quit?");
@@ -160,10 +160,13 @@ void engine::adjustmentWindow(){
   ImGui::SliderFloat( "Angle", &viewAngle, -3.14159265, 3.14159265, "%.3f" );
   ImGui::SliderFloat( "Max Distance", &maxDistance, 10, 5000, "%.3f" );
   ImGui::SliderInt( "Horizon", &horizonLine, 0, 3000, "%d" );
-  ImGui::SliderFloat( "Height Scale", &heightScalar, 0, 900., "%.3f" );
+  ImGui::SliderFloat( "Height Scale", &heightScalar, 0, 1500., "%.3f" );
   ImGui::SliderFloat( "Side-to-Side Offset", &offsetScalar, 0, 300., "%.3f" );
   ImGui::SliderFloat( "Step Increment", &stepIncrement, 0., 0.5, "%.3f" );
   ImGui::SliderFloat( "FoV", &FoVScalar, 0.001, 15.0, "%.3f" );
+
+  ImGui::SliderInt( "Linear Sampling", &linearTextures, 0, 1, "%d" );
+
   ImGui::Checkbox( "Height follows Player Height", &adaptiveHeight );
   ImGui::Text( "" );
   ImGui::SliderFloat( "View Bump", &viewBump, 0.0, 500.0, "%.3f" );
@@ -172,6 +175,7 @@ void engine::adjustmentWindow(){
   ImGui::SliderFloat( "Fog Scale", &fogScalar, 0., 1.5, "%.3f" );
   ImGui::ColorEdit3( "Fog Color", ( float * )&clearColor, 0 );
   ImGui::Text( "" );
+  ImGui::SliderInt( "Erosion Steps per Update", &erosionNumStepsPerFrame, 0, 8000, "%d" );
 
   const char* items[] = { "XOR",
     "Map  1", "Map  2", "Map  3", "Map  4", "Map  5",
@@ -179,10 +183,10 @@ void engine::adjustmentWindow(){
     "Map 11", "Map 12", "Map 13", "Map 14", "Map 15",
     "Map 16", "Map 17", "Map 18", "Map 19", "Map 20",
     "Map 21", "Map 22", "Map 23", "Map 24", "Map 25",
-    "Map 26", "Map 27", "Map 28", "Map 29", "Map 30"};
+    "Map 26", "Map 27", "Map 28", "Map 29", "Map 30",
+    "Erosion"};
 
-  static int mapPickerItemCurrent  = -1;
-  static int mapPickerItemPrevious = -1;
+  static int mapPickerItemPrevious = 31;
   ImGui::Combo("Map Picker", &mapPickerItemCurrent, items, IM_ARRAYSIZE(items));
 
   if( mapPickerItemCurrent != mapPickerItemPrevious ){
@@ -192,6 +196,9 @@ void engine::adjustmentWindow(){
   ImGui::Unindent();
   ImGui::Text( std::string( " Render Pass Time: " + std::to_string( firstPassFrameTimeMs ) + " ms " ).c_str() );
   ImGui::Text( std::string( " Minimap Pass Time: " + std::to_string( secondPassFrameTimeMs ) + " ms " ).c_str() );
+  ImGui::Text( "" );
+  ImGui::Text( std::string( " Erosion Update Time: " + std::to_string( erosionPassTimeMs ) + " ms " ).c_str() );
+
 
   const float totalFrameTime = firstPassFrameTimeMs + secondPassFrameTimeMs;
   ImGui::Text( std::string( " Total Frame Time: " + std::to_string( totalFrameTime ) + " ms ( " + std::to_string( 1. / ( totalFrameTime / 1000. ) ) + " fps )" ).c_str() );

@@ -8,8 +8,13 @@ layout( binding = 0, rgba8ui ) uniform uimage2D renderTexture;
 layout( binding = 1, rgba8ui ) uniform uimage2D minimapTexture;
 // layout( binding = 2, rgba8ui ) uniform uimage2D heightmap;
 // layout( binding = 3, rgba8ui ) uniform uimage2D colormap;
-layout( binding = 2 ) uniform sampler2DRect heightmap;
-layout( binding = 3 ) uniform sampler2DRect colormap;
+
+// layout( binding = 2 ) uniform sampler2DRect heightmap;
+// layout( binding = 3 ) uniform sampler2DRect colormap;
+
+layout( binding = 2 ) uniform sampler2D heightmap;
+layout( binding = 3 ) uniform sampler2D colormap;
+
 
 // current screen resolution
 uniform ivec2 resolution;
@@ -103,10 +108,10 @@ float heightmapReference( vec2 location ){
   if( insideMask( location ) ){
     if( distance( location, viewPosition ) < ( 1.618 / minimapScalar ) ){
       // return imageLoad( heightmap, location ).r + viewerElevation;
-      return ( texture( heightmap, location ).r * 255 ) + viewerElevation;
+      return ( texture( heightmap, location / textureSize( heightmap, 0 ) ).r * 255 ) + viewerElevation;
     }else{
       // return imageLoad( heightmap, location ).r;
-      return ( texture( heightmap, location ).r * 255 );
+      return ( texture( heightmap, location / textureSize( heightmap, 0 ) ).r * 255 );
     }
   }else{
     return 0;
@@ -122,7 +127,7 @@ vec4 colormapReference( vec2 location ){
       return vec4( 255, 0, 0, 255 );
     }else{
       // return imageLoad( colormap, location );
-      return texture( colormap, location ) * 255;
+      return texture( colormap, location / textureSize( colormap, 0 ) ) * 255;
     }
   }else{
     return vec4( 0 );
@@ -160,7 +165,7 @@ void main() {
   const float dz = 0.25;
   for( float dSample = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz ){
     const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * fixedDirection );
-    const float heightSample    = heightmapReference(samplePosition);
+    const float heightSample    = heightmapReference( samplePosition );
     const float heightOnScreen  = (( heightSample - viewerHeight ) * ( 1. / dSample ) * heightScalar + horizonLine);
 
     if( heightOnScreen > yBuffer ){

@@ -27,9 +27,32 @@ private:
 	float depositionRate = 0.1;
 	float minimumVolume = 0.01;
 	float friction = 0.05;
-  int erosionNumStepsPerFrame = 200;
-  bool erosionRunning = true;
+  int erosionNumStepsPerFrame = 4000;
 
+
+
+  // thread for the erosion calcs
+  bool threadShouldRun = true;
+  bool erosionReady = true;
+  std::thread erosionThread{[=](){
+    while( threadShouldRun ) {
+      if( erosionReady ){
+        std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+      } else {
+        // timer start
+        auto tstart = std::chrono::high_resolution_clock::now();
+
+        // do the work
+        erode( erosionNumStepsPerFrame );
+        prepareMapsFromErosionModel();
+
+        // timer end
+        erosionPassTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-tstart).count();
+
+        erosionReady = true;
+      }
+    }
+  }};
 
 
   void generateDiamondSquare();
@@ -62,15 +85,18 @@ private:
   int viewerHeight       = 75;
   float viewAngle        = -0.425;
   float maxDistance      = 800.;
-  int horizonLine        = 500;
-  float heightScalar     = 451.0;
+  int horizonLine        = 700;
+  float heightScalar     = 1200.0;
   float offsetScalar     = 0.;
   float fogScalar        = 0.451;
   float stepIncrement    = 0.0;
   float FoVScalar        = 0.85;
-  float viewBump         = 80;
+  float viewBump         = 275;
   float minimapScalar    = 0.3;
   bool adaptiveHeight    = false;
+
+  int mapPickerItemCurrent = 31;
+  int linearTextures = 0;
 
 
   // keeps track of when the heightmap has changed and needs to be re-sent

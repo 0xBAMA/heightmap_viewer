@@ -103,8 +103,8 @@ void engine::glSetup() {
   // generate the main render texture
   glGenTextures( 1, &mainRenderTexture );
   glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, mainRenderTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
+  glBindTexture( GL_TEXTURE_2D, mainRenderTexture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
   glBindImageTexture( 0, mainRenderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
   imageData.clear();
@@ -117,8 +117,8 @@ void engine::glSetup() {
   // generate the minimap render texture
   glGenTextures( 1, &miniRenderTexture );
   glActiveTexture( GL_TEXTURE1 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, miniRenderTexture );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
+  glBindTexture( GL_TEXTURE_2D, miniRenderTexture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, totalScreenWidth, totalScreenHeight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &imageData[0] );
   glBindImageTexture( 1, miniRenderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
 
@@ -127,9 +127,9 @@ void engine::glSetup() {
   std::mt19937 gen( rd() ); //Standard mersenne_twister_engine seeded with rd()
   std::uniform_int_distribution< int > distrib( 1, 30 );
 
-  loadMap( distrib( gen ) );
   generateDiamondSquare();
-  erode( 50000 );
+  loadMap( mapPickerItemCurrent );
+  erode( 5000 );
 
 
   cout << "done." << endl;
@@ -155,30 +155,16 @@ void engine::drawEverything() {
   const int screenY = io.DisplaySize.y;
 
 
-
-
-
-
-
-  // these will be done in a second thread, so as not to hold up the main thread
-  if( !erosionRunning ){
-    // start the erosion thread
-    // set erosionRunning to true
-    // erode(erosionNumStepsPerFrame);
-    prepareMapsFromErosionModel();
-    // once complete, make sure erosionRunning is set false
-
-    // this will happen in the main thread, to ensure synchronization
+  if( erosionReady ){
+    // this will happen in the main thread, to prevent sync issues w/ multithreaded use of OpenGL
     sendToGPU(); // send the prepared contents to the GPU
+    erosionReady = false; // set thread flag to show thread is now running
+
     // then also invoke the shade shader, to color the heightmap, given the input info
     //    - note that normal vector will be available in the initial colormap
-    // compute shader to compute the colormap
-    glUseProgram( shadeShader );
+    glUseProgram( shadeShader );  // computing the colormap
     glDispatchCompute( worldX / 16, worldY / 16, 1 );
   }
-
-
-
 
 
   // timer query
@@ -380,17 +366,21 @@ void engine::loadMap( int index ){
 
   unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
 
-  std::string heightmapPath = std::string( "maps/map" + std::to_string( index ) + "Height.png" );
-  std::string colormapPath  = std::string( "maps/map" + std::to_string( index ) + "Color.png" );
+  if( index == 31 ){
+    prepareMapsFromErosionModel();
+  } else {
+    std::string heightmapPath = std::string( "maps/map" + std::to_string( index ) + "Height.png" );
+    std::string colormapPath  = std::string( "maps/map" + std::to_string( index ) + "Color.png" );
 
-  error = lodepng::decode( heightmap, hWidth, hHeight, heightmapPath.c_str() );
-  if( error ) cout << "error loading heightmap data from " << heightmapPath << endl;
+    error = lodepng::decode( heightmap, hWidth, hHeight, heightmapPath.c_str() );
+    if( error ) cout << "error loading heightmap data from " << heightmapPath << endl;
 
-  error = lodepng::decode( colormap, cWidth, cHeight, colormapPath.c_str() );
-  if( error ) cout << "error loading colormap data from " << colormapPath << endl;
+    error = lodepng::decode( colormap, cWidth, cHeight, colormapPath.c_str() );
+    if( error ) cout << "error loading colormap data from " << colormapPath << endl;
 
-  worldX = hWidth;
-  worldY = hHeight;
+    worldX = hWidth;
+    worldY = hHeight;
+  }
 
   // send the updated contents to GPU
   sendToGPU();
@@ -398,23 +388,39 @@ void engine::loadMap( int index ){
 
 void engine::sendToGPU(){
   glActiveTexture( GL_TEXTURE2 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, heightmapTexture );
-  // glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &heightmap[0] );
-  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glBindTexture( GL_TEXTURE_2D, heightmapTexture );
+  // glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &heightmap[0] );
+
+  if( !linearTextures ){
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  } else {
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  }
+
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+
   glBindImageTexture( 2, heightmapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 
   glActiveTexture( GL_TEXTURE3 );
-  glBindTexture( GL_TEXTURE_RECTANGLE, colormapTexture );
-  // glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
-  glTexImage2D( GL_TEXTURE_RECTANGLE, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &colormap[0] );
-  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-  // glTexParameteri( GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glBindTexture( GL_TEXTURE_2D, colormapTexture );
+  // glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &colormap[0] );
+
+  if( !linearTextures ){
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  } else {
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  }
+
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+
   glBindImageTexture( 3, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 }
 
@@ -605,6 +611,9 @@ void engine::prepareMapsFromErosionModel(){
 void engine::quit() {
   cout << "  Shutting down...................................";
 
+  // tell the thread it should stop, before calling the rest of the shutdown - gives it some time
+  threadShouldRun = false;
+
   // shutdown everything
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplSDL2_Shutdown();
@@ -615,5 +624,10 @@ void engine::quit() {
   SDL_DestroyWindow( window );
   SDL_Quit();
 
+  // join the worker thread
+    // this is a blocking operation, so it will hang while waiting for the final loop iteration
+  erosionThread.join();
+
+  // done
   cout << "goodbye." << endl;
 }
