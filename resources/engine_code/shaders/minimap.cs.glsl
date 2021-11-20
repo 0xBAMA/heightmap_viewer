@@ -125,8 +125,9 @@ vec4 colormapReference( vec2 location ){
   if( insideMask( location ) ){
     if( distance( location, viewPosition ) < ( 1.618 / minimapScalar ) ){
       return vec4( 255, 0, 0, 255 );
+    }else if( distance( location, viewPosition + vec2( viewBump * globalForwards ) ) > ( 97. / minimapScalar ) ){
+      return vec4( 0, 0, 0, 0 );
     }else{
-      // return imageLoad( colormap, location );
       return texture( colormap, location / textureSize( colormap, 0 ) ) * 255;
     }
   }else{

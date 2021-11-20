@@ -36,14 +36,17 @@ private:
   bool erosionReady = true;
   std::thread erosionThread{[=](){
     while( threadShouldRun ) {
-      if( erosionReady ){
+      if( erosionReady || mapPickerItemCurrent != 31 ){
         std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
       } else {
         // timer start
         auto tstart = std::chrono::high_resolution_clock::now();
 
-        // do the work
-        erode( erosionNumStepsPerFrame );
+        int count = erosionNumStepsPerFrame;
+        // erosion mode active, do the work
+        while( ( count -= 500 ) > 0 && threadShouldRun)
+          erode( 500 );
+
         prepareMapsFromErosionModel();
 
         // timer end
