@@ -4,19 +4,19 @@
 // This contains the very high level expression of what's going on
 
 engine::engine(){
-  programQuitFlag = false;
+	programQuitFlag = false;
 
-  createWindow();
-  glDebugEnable();
-  glSetup();
-  ImGUIConfigure();
+	createWindow();
+	glDebugEnable();
+	glSetup();
+	ImGUIConfigure();
 
-  while(!programQuitFlag){
-    drawEverything();
-    handleInput();
-  }
+	while( !programQuitFlag ) {
+		drawEverything();
+		handleInput();
+	}
 }
 
 engine::~engine(){
-  quit();
+	quit();
 }
