@@ -6,6 +6,7 @@ layout( local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
 // texture working set
 layout( binding = 0, rgba8ui ) uniform uimage2D renderTexture;
 layout( binding = 1, rgba8ui ) uniform uimage2D minimapTexture;
+
 // layout( binding = 2, rgba8ui ) uniform uimage2D heightmap;
 // layout( binding = 3, rgba8ui ) uniform uimage2D colormap;
 
@@ -54,12 +55,6 @@ uniform float viewBump;
 // minimap scale factor
 uniform float minimapScalar;
 
-// scalar for fog distance
-// uniform float fogScalar;
-
-// increase in step size as you get farther from the camera
-// uniform float stepIncrement; // I've seen values of 0.005 and 0.2
-
 // adjustment for the FoV
 // uniform float FoVScalar;
 const float FoVScalar = 0.275;
@@ -68,10 +63,6 @@ const float FoVScalar = 0.275;
 
 // need masked access to the heightmap - circular mask for the heightmap
 // center point being located some distance "in front of" the viewers position - along the direction vector
-
-
-
-
 
 uvec4 backgroundColor = uvec4( 255, 0, 0, 255 );
 
@@ -139,14 +130,14 @@ mat2 rotate2D( float r ){
   return mat2( cos( r ), sin( r ), -sin( r ), cos( r ));
 }
 
-void main() {
+void main () {
 
   const float wPixels    = resolution.x;
   const float hPixels    = imageSize( minimapTexture ).y;
   const float myXIndex   = gl_GlobalInvocationID.x;
-  float yBuffer          = 13. * hPixels / 24.;
+  float yBuffer          = 13.0f * hPixels / 24.0f;
 
-  if( myXIndex > wPixels ) return;
+  if ( myXIndex > wPixels ) return;
 
   // FoV considerations
   //   mapping [0..wPixels] to [-1..1]
@@ -167,9 +158,9 @@ void main() {
   for( float dSample = 1.0; dSample < maxDistance && yBuffer < hPixels; dSample += dz ){
     const ivec2 samplePosition = ivec2( viewPositionLocal + dSample * fixedDirection );
     const float heightSample    = heightmapReference( samplePosition );
-    const float heightOnScreen  = (( heightSample - viewerHeight ) * ( 1. / dSample ) * heightScalar + horizonLine);
+    const float heightOnScreen  = ( ( heightSample - viewerHeight ) * ( 1.0f / dSample ) * heightScalar + horizonLine );
 
-    if( heightOnScreen > yBuffer ){
+    if ( heightOnScreen > yBuffer ) {
       drawVerticalLine( int( myXIndex ), yBuffer, heightOnScreen, colormapReference( samplePosition ) );
       yBuffer = uint( heightOnScreen );
     }

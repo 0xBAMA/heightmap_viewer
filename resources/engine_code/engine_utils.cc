@@ -1,7 +1,7 @@
 #include "engine.h"
 // This contains the lower level code
 
-void engine::createWindow() {
+void engine::createWindow () {
 	if ( SDL_Init( SDL_INIT_EVERYTHING ) != 0 ) {
 		printf("Error: %s\n", SDL_GetError());
 	}
@@ -12,10 +12,8 @@ void engine::createWindow() {
 	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE,         8 );
 	SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE,          8 );
 	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE,         8 );
-
 	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE,        24 );
 	SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE,       8 );
-
 	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
 	SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 8 );
 
@@ -53,7 +51,7 @@ void engine::createWindow() {
 	cout << "done." << endl;
 }
 
-void engine::glSetup() {
+void engine::glSetup () {
 	// some info on your current platform
 	const GLubyte *renderer = glGetString( GL_RENDERER ); // get renderer string
 	const GLubyte *version = glGetString( GL_VERSION );   // version as a string
@@ -108,9 +106,9 @@ void engine::glSetup() {
 
 	imageData.clear();
 	imageData.resize( totalScreenWidth * totalScreenHeight * 4 );
-	for( auto it = imageData.begin(); it != imageData.end(); it++ ){
+	for ( auto it = imageData.begin(); it != imageData.end(); it++ ) {
 		int index = ( it - imageData.begin() );
-		*it = ( unsigned char )( ( index / ( totalScreenWidth ) ) % 256 ) ^ ( unsigned char )( ( index % ( 4 * totalScreenWidth )) % 256 );
+		*it = ( unsigned char ) ( ( index / ( totalScreenWidth ) ) % 256 ) ^ ( unsigned char ) ( ( index % ( 4 * totalScreenWidth ) ) % 256 );
 	}
 
 	// generate the minimap render texture
@@ -141,7 +139,7 @@ void engine::glSetup() {
 	cout << "done." << endl;
 }
 
-void engine::drawEverything() {
+void engine::drawEverything () {
 
 	// clear the framebuffer
 	glClearColor( clearColor.x, clearColor.y, clearColor.z, 1.0 );
@@ -153,7 +151,7 @@ void engine::drawEverything() {
 	const int screenY = io.DisplaySize.y;
 
 
-	if( erosionReady ){
+	if ( erosionReady ) {
 		// this will happen in the main thread, to prevent sync issues w/ multithreaded use of OpenGL
 		sendToGPU(); // send the prepared contents to the GPU
 		erosionReady = false; // set thread flag to show thread is now running
@@ -195,37 +193,37 @@ void engine::drawEverything() {
 	while( !timeAvailable )
 		glGetQueryObjectiv( queryID[1], GL_QUERY_RESULT_AVAILABLE, &timeAvailable );
 
-		glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
-		glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
-		firstPassFrameTimeMs = ( stopTime - startTime ) / 1000000.0f;
+	glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
+	glGetQueryObjectui64v( queryID[1], GL_QUERY_RESULT, &stopTime );
+	firstPassFrameTimeMs = ( stopTime - startTime ) / 1000000.0f;
 
-		// compute shader to compute the minimap into the corresponding rendertexture
-		glQueryCounter( queryID[0], GL_TIMESTAMP );
-		glUseProgram( minimapShader );
+	// compute shader to compute the minimap into the corresponding rendertexture
+	glQueryCounter( queryID[0], GL_TIMESTAMP );
+	glUseProgram( minimapShader );
 
-		int heightRef = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y )));
-		if ( viewerHeight < heightRef )
-			viewerHeight = heightRef + 5;
-		int viewerElevation = viewerHeight - heightRef;
+	int heightRef = heightmapReference( glm::ivec2( int( viewPosition.x ), int( viewPosition.y )));
+	if ( viewerHeight < heightRef )
+		viewerHeight = heightRef + 5;
+	int viewerElevation = viewerHeight - heightRef;
 
-		if( !adaptiveHeight )
-			viewerElevation = 35;
+	if ( !adaptiveHeight )
+		viewerElevation = 35;
 
 
-		// updating all the uniforms
-		glUniform2i( glGetUniformLocation( minimapShader, "resolution" ), screenX / 4, screenY / 3 );
-		glUniform2f( glGetUniformLocation( minimapShader, "viewPosition" ), viewPosition.x, viewPosition.y );
-		glUniform1f( glGetUniformLocation( minimapShader, "viewAngle" ), viewAngle );
-		glUniform1f( glGetUniformLocation( minimapShader, "viewBump" ), viewBump );
-		glUniform1f( glGetUniformLocation( minimapShader, "minimapScalar" ), minimapScalar );
-		glUniform1i( glGetUniformLocation( minimapShader, "viewerElevation" ), viewerElevation );
+	// updating all the uniforms
+	glUniform2i( glGetUniformLocation( minimapShader, "resolution" ), screenX / 4, screenY / 3 );
+	glUniform2f( glGetUniformLocation( minimapShader, "viewPosition" ), viewPosition.x, viewPosition.y );
+	glUniform1f( glGetUniformLocation( minimapShader, "viewAngle" ), viewAngle );
+	glUniform1f( glGetUniformLocation( minimapShader, "viewBump" ), viewBump );
+	glUniform1f( glGetUniformLocation( minimapShader, "minimapScalar" ), minimapScalar );
+	glUniform1i( glGetUniformLocation( minimapShader, "viewerElevation" ), viewerElevation );
 
 	// dispatch to draw into render texture
 	glDispatchCompute( std::ceil( totalScreenWidth / ( 256.0f ) ), 1, 1 );
 	glQueryCounter( queryID[1], GL_TIMESTAMP );
 
 	timeAvailable = 0;
-	while( !timeAvailable )
+	while ( !timeAvailable )
 		glGetQueryObjectiv( queryID[1], GL_QUERY_RESULT_AVAILABLE, &timeAvailable );
 
 	glGetQueryObjectui64v( queryID[0], GL_QUERY_RESULT, &startTime );
@@ -278,57 +276,57 @@ void engine::drawEverything() {
 	glDispatchCompute( totalScreenWidth, totalScreenHeight, 1 );
 }
 
-void engine::handleInput(){
+void engine::handleInput () {
 	SDL_Event event;
 	ImGuiIO &io = ImGui::GetIO();
 
 	// handle specific keys
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_RightArrow )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_RightArrow )))
 		viewAngle += SDL_GetModState() & KMOD_SHIFT ? 0.05f : 0.005f;
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_LeftArrow )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_LeftArrow )))
 		viewAngle -= SDL_GetModState() & KMOD_SHIFT ? 0.05f : 0.005f;
 
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_UpArrow )))
 		positionAdjust(SDL_GetModState() & KMOD_SHIFT ? 5.0f : 1.0f );
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_DownArrow )))
 		positionAdjust(SDL_GetModState() & KMOD_SHIFT ? -5.0f : -1.0f );
 
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageUp )))
 		viewerHeight += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_PageDown )))
 		viewerHeight -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
 
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Home )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Home )))
 		horizonLine += SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
-	if( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Delete )))
+	if ( ImGui::IsKeyPressed( ImGui::GetKeyIndex( ImGuiKey_Delete )))
 		horizonLine -= SDL_GetModState() & KMOD_SHIFT ? 10 : 1;
 
 
-	while( SDL_PollEvent( &event ) ){
+	while ( SDL_PollEvent( &event ) ) {
 		ImGui_ImplSDL2_ProcessEvent( &event );
 
-		if( event.type == SDL_QUIT )
+		if ( event.type == SDL_QUIT )
 			programQuitFlag = true;
 
-		if( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID( window ) )
+		if ( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID( window ) )
 			programQuitFlag = true;
 
-		if(! io.WantCaptureKeyboard ) { // imgui doesn't want the keyboard input
+		if ( ! io.WantCaptureKeyboard ) { // imgui doesn't want the keyboard input
 			// this is used so that keyboard manipulation of widgets doesn't collide with my input handling
 
-			if( ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE ) ||
+			if ( ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE ) ||
 			( event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_X1 ) )
 				quitConfirmFlag = !quitConfirmFlag;
 
-			if( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE && SDL_GetModState() & KMOD_SHIFT )
+			if ( event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE && SDL_GetModState() & KMOD_SHIFT )
 				programQuitFlag = true; // shift+escape for force quit, skipping confirmation
 
 		}
 	}
 }
 
-int engine::heightmapReference( glm::ivec2 p ){
-	if( p.x < 0 || p.x > worldX || p.y < 0 || p.y > worldY )
+int engine::heightmapReference ( glm::ivec2 p ) {
+	if ( p.x < 0 || p.x > worldX || p.y < 0 || p.y > worldY )
 		return 0;
 
 	p.x = std::clamp( p.x, 0, worldX - 1 );
@@ -350,7 +348,7 @@ void engine::loadMap ( int index ) {
 	colormap.clear();
 
 	bool firstTime = true;
-	if( firstTime ) { // need to generate textures
+	if ( firstTime ) { // need to generate textures
 		glGenTextures( 1, &heightmapTexture );
 		glGenTextures( 1, &colormapTexture );
 		firstTime = false;
@@ -358,7 +356,7 @@ void engine::loadMap ( int index ) {
 
 	unsigned hWidth, hHeight, cWidth, cHeight, error = 0;
 
-	if( index == 31 ){
+	if ( index == 31 ) {
 		prepareMapsFromErosionModel();
 	} else {
 		std::string heightmapPath = std::string( "maps/map" + std::to_string( index ) + "Height.png" );
@@ -386,7 +384,7 @@ void engine::sendToGPU () {
 	// glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &heightmap[0] );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &heightmap[0] );
 
-	if( !linearTextures ){
+	if ( !linearTextures ) {
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	} else {
@@ -404,7 +402,7 @@ void engine::sendToGPU () {
 	// glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8UI, worldX, worldY, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, &colormap[0] );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, worldX, worldY, 0, GL_RGBA, GL_UNSIGNED_BYTE, &colormap[0] );
 
-	if( !linearTextures ){
+	if ( !linearTextures ) {
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	} else {
@@ -417,11 +415,11 @@ void engine::sendToGPU () {
 	glBindImageTexture( 3, colormapTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI );
 }
 
-void engine::generateDiamondSquare(){
+void engine::generateDiamondSquare () {
 	long unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
 
-	std::default_random_engine engine{seed};
-	std::uniform_real_distribution<float> distribution{0, 1};
+	std::default_random_engine engine{ seed };
+	std::uniform_real_distribution<float> distribution{ 0, 1 };
 
 	worldX = worldY = 1024;
 
@@ -459,13 +457,13 @@ void engine::generateDiamondSquare(){
 			}
 		);
 
-		for( int x = 0; x < worldX; x++ )
-			for( int y = 0; y < worldY; y++ )
-				erosionModel[ x ][ y ] = map[ x ][ y ] / static_cast< float >( std::numeric_limits< uint16_t >::max() );
-	}
+	for( int x = 0; x < worldX; x++ )
+		for( int y = 0; y < worldY; y++ )
+			erosionModel[ x ][ y ] = map[ x ][ y ] / static_cast< float >( std::numeric_limits< uint16_t >::max() );
+}
 
-	glm::vec3 engine::surfaceNormal(int x, int y){
-	float scale = 60.0;
+glm::vec3 engine::surfaceNormal ( int x, int y ) {
+	float scale = 60.0f;
 	float myPoint = erosionModel[x][y];
 	float sqrt2 = sqrt( 2 );
 
@@ -497,13 +495,13 @@ struct particle {
 	float sedimentFraction = 0.0f;
 };
 
-void engine::erode( int steps ){
+void engine::erode ( int steps ) {
 	std::default_random_engine gen;
 	std::uniform_int_distribution<int> distX( 0, worldX - 1 );
 	std::uniform_int_distribution<int> distY( 0, worldY - 1 );
 
 	// run the simulation for the specified number of steps
-	for( int i = 0; i < steps; i++ ){
+	for ( int i = 0; i < steps; i++ ) {
 		//spawn a new particle at a random position
 		particle p;
 		p.position = glm::vec2( distX( gen ), distY( gen ) );
@@ -523,7 +521,7 @@ void engine::erode( int steps ){
 			p.speed *= ( 1.0f - dt * friction );
 
 			// discard the droplet if it has gone out of bounds
-			if( !glm::all( glm::greaterThanEqual( p.position, glm::vec2( 0 ) ) ) ||
+			if ( !glm::all( glm::greaterThanEqual( p.position, glm::vec2( 0.0f ) ) ) ||
 				!glm::all( glm::lessThan( glm::ivec2( p.position ), glm::ivec2( worldX, worldY ) ) ) ) break;
 
 			// sediment capacity
@@ -541,17 +539,17 @@ void engine::erode( int steps ){
 	}
 }
 
-void engine::prepareMapsFromErosionModel(){
+void engine::prepareMapsFromErosionModel () {
 	// goal here is to go from the floating point heightmap model to the four channel unsigned char
 	// array, as required by the GPU - heightmap is grayscale, colormap is initialized with normals
 
 	// once this is completed, sendToGPU can be called, to send the heightmap and colormap arrays
 
-	heightmap.resize(worldX * worldY * 4);
-	colormap.resize( worldX * worldY * 4);
+	heightmap.resize( worldX * worldY * 4 );
+	colormap.resize( worldX * worldY * 4 );
 
-	for(int x = 0; x < worldX; x++){
-		for(int y = 0; y < worldY; y++){
+	for ( int x = 0; x < worldX; x++ ) {
+		for ( int y = 0; y < worldY; y++ ) {
 
 			int index = ( x + y * worldX ) * 4;
 			unsigned char modelRef = static_cast< unsigned char >( erosionModel[ x ][ y ] * 255 );
@@ -576,7 +574,7 @@ void engine::prepareMapsFromErosionModel(){
 	}
 }
 
-void engine::quit() {
+void engine::quit () {
 	cout << "  Shutting down...................................";
 
 	// tell the thread it should stop, before calling the rest of the shutdown - gives it some time

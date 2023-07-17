@@ -19,7 +19,6 @@ private:
 	float secondPassFrameTimeMs = 0;
 	float erosionPassTimeMs = 0;
 
-
 	// erosion simulation parameters
 	float dt = 1.2; // timestep
 	float density = 1.0; // to determine intertia
@@ -28,8 +27,6 @@ private:
 	float minimumVolume = 0.01;
 	float friction = 0.05;
 	int erosionNumStepsPerFrame = 4000;
-
-
 
 	// thread for the erosion calcs
 	bool threadShouldRun = true;
